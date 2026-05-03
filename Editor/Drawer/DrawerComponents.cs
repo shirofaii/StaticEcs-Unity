@@ -8,7 +8,11 @@ using Object = UnityEngine.Object;
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
     public static partial class Drawer {
         private static readonly List<int> _sortOrderCache = new();
+#if UNITY_6000_4_OR_NEWER
+        private static readonly Dictionary<EntityId, string> _componentFilters = new();
+#else
         private static readonly Dictionary<int, string> _componentFilters = new();
+#endif
         private static readonly List<ManagedReferenceMissingType> _missingPool = new();
         private static readonly HashSet<long> _brokenShowData = new();
         private static readonly Dictionary<string, int> _groupMatchCounts = new();
@@ -50,7 +54,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         private static void DrawSearchField<TWorld>(StaticEcsEntityProvider<TWorld> provider, out string filter)
             where TWorld : struct, IWorldType {
+#if UNITY_6000_4_OR_NEWER
+            var filterKey = provider.GetEntityId();
+#else
             var filterKey = provider.GetInstanceID();
+#endif
             _componentFilters.TryGetValue(filterKey, out filter);
             filter ??= string.Empty;
             
@@ -170,7 +178,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
 
         private static int GroupFoldoutKey<TWorld>(StaticEcsEntityProvider<TWorld> provider, string groupName) where TWorld : struct, IWorldType {
+#if UNITY_6000_4_OR_NEWER
+            return HashCode.Combine(provider.GetEntityId(), "ECS_GROUP", groupName);
+#else
             return HashCode.Combine(provider.GetInstanceID(), "ECS_GROUP", groupName);
+#endif
         }
 
         private static bool BeginGroupSection<TWorld>(StaticEcsEntityProvider<TWorld> provider, Type worldType, string groupName, Color groupColor, bool groupHasColor, bool forceOpen)
@@ -359,7 +371,12 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 else if (component is MultiProvider mp) componentValue = mp.value;
 
                 if (componentValue != null && !TryDrawSpecialComponent(componentValue, type, component, provider)) {
+#if UNITY_6000_4_OR_NEWER
+                    var wrapperKey = ((long) provider.GetEntityId().GetHashCode() << 32) ^ type.GetHashCode();
+#else
                     var wrapperKey = ((long) provider.GetInstanceID() << 32) ^ type.GetHashCode();
+#endif
+                    
                     var wrapper = ComponentDrawerWrapper.GetFor(wrapperKey);
                     var so = new SerializedObject(wrapper);
                     var prop = so.FindProperty("value");
@@ -557,7 +574,12 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
 
             if (baseName == "Multi") {
+#if UNITY_6000_4_OR_NEWER
+                DrawMultiComponent(component, type, entityProvider.GetEntityId().GetHashCode());
+#else
                 DrawMultiComponent(component, type, entityProvider.GetInstanceID());
+#endif
+                
                 return true;
             }
 
@@ -916,8 +938,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             } else {
                 label = $"Broken {componentOrTag.GetType().Name} at index {index}";
             }
-
+#if UNITY_6000_4_OR_NEWER
+            var showKey = entityProvider.GetEntityId().GetHashCode() ^ (hasMissing ? missing.referenceId.GetHashCode() : index);
+#else
             var showKey = entityProvider.GetInstanceID() ^ (hasMissing ? missing.referenceId.GetHashCode() : index);
+#endif
             var expanded = _brokenShowData.Contains(showKey);
 
             Type autoType = null;
