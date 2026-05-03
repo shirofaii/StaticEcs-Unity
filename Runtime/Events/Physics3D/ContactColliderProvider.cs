@@ -40,7 +40,14 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
 
             if (!World<TWorld>.HasResource<ContactColliderEntityMap>()) {
-                World<TWorld>.SetResource(new ContactColliderEntityMap { Map = new Dictionary<EntityId, EntityGID>() });
+                World<TWorld>.SetResource(new ContactColliderEntityMap
+                {
+#if UNITY_6000_4_OR_NEWER
+                    Map = new Dictionary<EntityId, EntityGID>()
+#else
+                    Map = new Dictionary<int, EntityGID>()
+#endif
+                });
             }
 
             ref var map = ref World<TWorld>.GetResource<ContactColliderEntityMap>();
@@ -52,7 +59,12 @@ namespace FFS.Libraries.StaticEcs.Unity {
             var gid = EntityGID;
             for (var i = 0; i < _colliders.Length; i++) {
                 _colliders[i].providesContacts = true;
+#if UNITY_6000_4_OR_NEWER
                 map.Map[_colliders[i].GetEntityId()] = gid;
+
+#else
+                map.Map[_colliders[i].GetInstanceID()] = gid;
+#endif
             }
         }
 
@@ -65,7 +77,11 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
             for (var i = 0; i < _colliders.Length; i++) {
                 if (_colliders[i] != null) {
+#if UNITY_6000_4_OR_NEWER
                     map.Map.Remove(_colliders[i].GetEntityId());
+#else
+                    map.Map.Remove(_colliders[i].GetInstanceID());
+#endif
                 }
             }
 

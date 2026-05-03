@@ -66,9 +66,14 @@ namespace FFS.Libraries.StaticEcs.Unity {
                     Impulse = cp.impulse,
                 });
             }
-
+#if UNITY_6000_4_OR_NEWER
             map.Map.TryGetValue(colliderA.GetEntityId(), out var gidA);
             map.Map.TryGetValue(colliderB.GetEntityId(), out var gidB);
+#else
+            map.Map.TryGetValue(colliderA.GetInstanceID(), out var gidA);
+            map.Map.TryGetValue(colliderB.GetInstanceID(), out var gidB);
+#endif
+            
 
             World<TWorld>.SendEvent(new ContactEnter3DEntityEvent {
                 EntityA = gidA,
@@ -109,9 +114,13 @@ namespace FFS.Libraries.StaticEcs.Unity {
                     ColliderB = colliderB,
                 });
             }
-
+#if UNITY_6000_4_OR_NEWER
             map.Map.TryGetValue(colliderA.GetEntityId(), out var gidA);
             map.Map.TryGetValue(colliderB.GetEntityId(), out var gidB);
+#else
+            map.Map.TryGetValue(colliderA.GetInstanceID(), out var gidA);
+            map.Map.TryGetValue(colliderB.GetInstanceID(), out var gidB);
+#endif
 
             World<TWorld>.SendEvent(new ContactExit3DEntityEvent {
                 EntityA = gidA,

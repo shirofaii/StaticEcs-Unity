@@ -23,7 +23,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             for (var i = 0; i < targets.Length; i++) {
                 var provider = (TSelf) targets[i];
+#if UNITY_6000_4_OR_NEWER
                 var key = FoldoutKeyPrefix + provider.GetEntityId();
+#else
+                var key = FoldoutKeyPrefix + provider.GetInstanceID();
+#endif
                 var expanded = SessionState.GetBool(key, false);
                 var newExpanded = EditorGUILayout.Foldout(expanded, provider.name, true);
                 if (newExpanded != expanded) {

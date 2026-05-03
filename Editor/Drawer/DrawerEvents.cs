@@ -117,7 +117,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             using (Ui.EnabledScopeVal(!cached)) {
                 EditorGUILayout.BeginVertical(GUI.skin.box);
                 {
+#if UNITY_6000_4_OR_NEWER
                     var wrapper = EventDrawerWrapper.GetFor(provider.GetEntityId());
+#else
+                    var wrapper = EventDrawerWrapper.GetFor(provider.GetInstanceID());
+#endif
                     using var so = new SerializedObject(wrapper);
                     var prop = so.FindProperty("value");
                     prop.managedReferenceValue = null;
@@ -185,8 +189,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     GUIUtility.ExitGUI();
                 }
             }
-
+#if UNITY_6000_4_OR_NEWER
             var showKey = provider.GetEntityId().GetHashCode() ^ missing.referenceId.GetHashCode();
+#else
+            var showKey = provider.GetInstanceID() ^ missing.referenceId.GetHashCode();
+#endif
             var expanded = _eventShowData.Contains(showKey);
 
             EditorGUILayout.BeginHorizontal();
