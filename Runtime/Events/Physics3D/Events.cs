@@ -139,8 +139,13 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public Vector3 Impulse;
     }
 
-    public struct ContactColliderEntityMap {
+    public struct ContactColliderEntityMap : IResource {
+#if UNITY_6000_4_OR_NEWER
+        public Dictionary<EntityId, EntityGID> Map;
+
+#else
         public Dictionary<int, EntityGID> Map;
+#endif
     }
 }
 #endif

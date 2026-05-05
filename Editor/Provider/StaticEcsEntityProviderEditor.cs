@@ -23,7 +23,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             for (var i = 0; i < targets.Length; i++) {
                 var provider = (TSelf) targets[i];
+#if UNITY_6000_4_OR_NEWER
+                var key = FoldoutKeyPrefix + provider.GetEntityId();
+#else
                 var key = FoldoutKeyPrefix + provider.GetInstanceID();
+#endif
                 var expanded = SessionState.GetBool(key, false);
                 var newExpanded = EditorGUILayout.Foldout(expanded, provider.name, true);
                 if (newExpanded != expanded) {
@@ -43,18 +47,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 DrawDefaultInspector();
             }
 
-            Drawer.DrawEntity<TWorld, TSelf>(provider, DrawMode.Inspector, p => {
-                p.CreateEntity();
-                if (p.IsPrefab()) {
-                    EntityInspectorHelper<TWorld, TSelf>.ShowWindowForEntity(p.EntityGid);
-                    p.EntityGid = default;
-                }
-                p.ClearPrefab();
-                EditorUtility.SetDirty(p);
-            }, p => {
-                p.EntityGid = default;
-                EditorUtility.SetDirty(p);
-            });
+            Drawer.DrawEntity<TWorld, TSelf>(provider, DrawMode.Inspector);
         }
     }
 }
