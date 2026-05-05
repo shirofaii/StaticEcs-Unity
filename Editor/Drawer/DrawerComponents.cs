@@ -222,8 +222,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 EditorGUILayout.EndHorizontal();
 
                 if (show) {
-                    EditorGUILayout.BeginVertical(GUI.skin.box);
-                    TypeSourceNavigator.DrawScriptField(type);
+                    EditorGUILayout.BeginVertical(/*GUI.skin.box*/);
+                    //TypeSourceNavigator.DrawScriptField(type);
 
                     IComponent componentValue = null;
                     if (prov is ComponentProvider cp) componentValue = cp.value;
