@@ -280,35 +280,35 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private static void DrawTag<TWorld>(IComponentOrTagProvider tag, StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
             var type = tag.ComponentType;
 
-            EditorGUI.indentLevel++;
-            EditorGUILayout.BeginHorizontal(GUI.skin.box);
+            var rect = GUILayoutUtility.GetRect(0, 18);
+            rect.width += rect.x + 4;
+            rect.x = 0;
+            
+            GUI.Box(rect, GUIContent.none, "RL Header");
+
+            var foldRect = new Rect(rect);
+            foldRect.x += 20;
+            foldRect.width -= 20 + 20;
+            
             var colored = type.EditorTypeColor(out var color);
             var labelStyle = colored
                 ? new GUIStyle(EditorStyles.boldLabel) { normal = { textColor = color } }
                 : EditorStyles.boldLabel;
-            GUILayout.Label(type.EditorTypeName(), labelStyle, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
-            var labelRect = GUILayoutUtility.GetLastRect();
-            var evt = Event.current;
-            if (evt.type == EventType.MouseDown && evt.button == 0 && labelRect.Contains(evt.mousePosition)) {
-                var script = MetaData.GetSourceScript(type);
-                if (script != null) {
-                    if (evt.clickCount >= 2) AssetDatabase.OpenAsset(script);
-                    else EditorGUIUtility.PingObject(script);
-                    evt.Use();
-                }
-            }
+            GUI.Label(foldRect, type.EditorTypeName(), labelStyle);
 
-            if (evt.type == EventType.Repaint) {
-                EditorGUIUtility.AddCursorRect(labelRect, MouseCursor.Link);
-            }
+            var menuRect = new Rect(rect)
+            {
+                x = rect.width - 20,
+                width = 18
+            };
 
-            if (Ui.TrashButton) {
+            menuRect.y += 2;
+            menuRect.height = 18;
+            
+            if (Ui.CloseButtonRect(menuRect)) {
                 provider.OnDeleteProvider(type);
                 EditorUtility.SetDirty(provider);
             }
-
-            EditorGUILayout.EndHorizontal();
-            EditorGUI.indentLevel--;
         }
 
         private static void DrawComponent<TWorld>(IComponentOrTagProvider component, StaticEcsEntityProvider<TWorld> provider, DrawMode mode) where TWorld : struct, IWorldType {
@@ -320,86 +320,87 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 typeName += " [Disabled]";
             }
 
-            bool show;
             var foldoutKey = HashCode.Combine(provider, type.FullName);
             if (initializedFoldouts.Add(foldoutKey)) {
                 ApplyFoldoutConfig(foldoutKey, type, typeof(TWorld));
             }
+            
+            var rect = GUILayoutUtility.GetRect(0, 18);
+            rect.width += rect.x + 4;
+            rect.x = 0;
+            
+            GUI.Box(rect, GUIContent.none, "RL Header");
 
-            EditorGUILayout.BeginHorizontal(GUI.skin.box);
-            {
-                var colored = type.EditorTypeColor(out var color);
-                if (colored) {
-                    DrawFoldoutBox(foldoutKey, typeName, typeName, out show, color);
-                } else {
-                    DrawFoldoutBox(foldoutKey, typeName, typeName, out show);
-                }
-
-                if (Ui.MenuButton) {
-                    var menu = new GenericMenu();
-                    if (provider.EntityIsActual() && typeof(IDisableable).IsAssignableFrom(type)) {
-                        if (disabled) {
-                            menu.AddItem(new GUIContent("Enable"), false, () => {
-                                provider.Enable(type);
-                                EditorUtility.SetDirty(provider);
-                            });
-                        } else {
-                            menu.AddItem(new GUIContent("Disable"), false, () => {
-                                provider.Disable(type);
-                                EditorUtility.SetDirty(provider);
-                            });
-                        }
-                    }
-
-                    menu.AddItem(new GUIContent("Delete"), false, () => {
-                        provider.OnDeleteProvider(type);
-                        EditorUtility.SetDirty(provider);
-                    });
-                    menu.ShowAsContext();
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-
+            var foldRect = new Rect(rect);
+            foldRect.x += 16;
+            foldRect.width -= 16 + 20;
+            
+            var colored = type.EditorTypeColor(out var color);
+            var style = colored
+                ? new GUIStyle(EditorStyles.foldoutHeader) { normal = { textColor = color } }
+                : EditorStyles.foldoutHeader;
+            
+            var show = EditorGUI.Foldout(foldRect, openHideFlags.Contains(foldoutKey), typeName, true, style);
             if (show) {
-                EditorGUILayout.BeginVertical(GUI.skin.box);
-                MetaData.DrawSourceField(type);
+                openHideFlags.Add(foldoutKey);
+            } else {
+                openHideFlags.Remove(foldoutKey);
+            }
 
-                IComponent componentValue = null;
-                if (component is ComponentProvider cp) componentValue = cp.value;
-                else if (component is LinkProvider lp) componentValue = lp.value;
-                else if (component is LinksProvider lsp) componentValue = lsp.value;
-                else if (component is MultiProvider mp) componentValue = mp.value;
+            var menuRect = new Rect(rect);
+            
+            menuRect.x = rect.width - 20;
+            menuRect.width = 18;
+            menuRect.y += 2;
+            menuRect.height = 18;
+            
+            if (Ui.CloseButtonRect(menuRect)) {
+                provider.OnDeleteProvider(type);
+                EditorUtility.SetDirty(provider);
+            }
 
-                if (componentValue != null && !TryDrawSpecialComponent(componentValue, type, component, provider)) {
+            if(!show) return;
+            
+            EditorGUILayout.BeginVertical();
+
+            IComponent componentValue = null;
+            if (component is ComponentProvider cp) componentValue = cp.value;
+            else if (component is LinkProvider lp) componentValue = lp.value;
+            else if (component is LinksProvider lsp) componentValue = lsp.value;
+            else if (component is MultiProvider mp) componentValue = mp.value;
+
+            if (componentValue != null && !TryDrawSpecialComponent(componentValue, type, component, provider))
+            {
 #if UNITY_6000_4_OR_NEWER
-                    var wrapperKey = ((long) provider.GetEntityId().GetHashCode() << 32) ^ type.GetHashCode();
+                var wrapperKey = ((long) provider.GetEntityId().GetHashCode() << 32) ^ type.GetHashCode();
 #else
-                    var wrapperKey = ((long) provider.GetInstanceID() << 32) ^ type.GetHashCode();
+                var wrapperKey = ((long)provider.GetInstanceID() << 32) ^ type.GetHashCode();
 #endif
-                    
-                    var wrapper = ComponentDrawerWrapper.GetFor(wrapperKey);
-                    var so = new SerializedObject(wrapper);
-                    var prop = so.FindProperty("value");
-                    prop.managedReferenceValue = null;
-                    so.ApplyModifiedPropertiesWithoutUndo();
-                    prop.managedReferenceValue = componentValue;
-                    so.ApplyModifiedPropertiesWithoutUndo();
-                    so.Update();
-                    prop = so.FindProperty("value");
 
-                    if (prop != null && prop.propertyType == SerializedPropertyType.ManagedReference) {
-                        DrawSerializedPropertyChildren(prop);
+                var wrapper = ComponentDrawerWrapper.GetFor(wrapperKey);
+                var so = new SerializedObject(wrapper);
+                var prop = so.FindProperty("value");
+                prop.managedReferenceValue = null;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                prop.managedReferenceValue = componentValue;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                so.Update();
+                prop = so.FindProperty("value");
 
-                        if (so.ApplyModifiedProperties()) {
-                            var newProv = CreateProviderForComponent(type, wrapper.value);
-                            provider.OnChangeProvider(newProv, type, deferred: mode != DrawMode.Inspector);
-                            EditorUtility.SetDirty(provider);
-                        }
+                if (prop != null && prop.propertyType == SerializedPropertyType.ManagedReference)
+                {
+                    DrawSerializedPropertyChildren(prop);
+
+                    if (so.ApplyModifiedProperties())
+                    {
+                        var newProv = CreateProviderForComponent(type, wrapper.value);
+                        provider.OnChangeProvider(newProv, type, deferred: mode != DrawMode.Inspector);
+                        EditorUtility.SetDirty(provider);
                     }
                 }
-
-                EditorGUILayout.EndVertical();
             }
+
+            EditorGUILayout.EndVertical();
         }
 
         internal static void DrawSerializedPropertyChildren(SerializedProperty property) {
@@ -427,7 +428,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 }
 
                 try {
-                    EditorGUILayout.PropertyField(iterator, true);
+                    EditorGUILayout.PropertyField(iterator);
                 } catch (System.ArgumentException) {
                     // Unity bug: stale managed reference index after value swap.
                     // Skip this property — next NextVisible(false) will move on.

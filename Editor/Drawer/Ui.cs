@@ -415,6 +415,9 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         };
 
 
+        public static bool CloseButtonRect(Rect rect) => GUI.Button(rect, _iconClose ??= EditorGUIUtility.IconContent("CrossIcon"), EditorStyles.iconButton);
+        private static GUIContent _iconClose;
+        
         public static bool MenuButton => GUILayout.Button(_iconMenu ??= EditorGUIUtility.IconContent("_Menu"), EditorStyles.iconButton, ExpandWidthFalse());
         private static GUIContent _iconMenu;
         
