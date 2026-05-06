@@ -64,10 +64,10 @@ namespace FFS.Libraries.StaticEcs.Unity {
                     var attribute = (StaticEcsEditorNameAttribute) Attribute.GetCustomAttribute(type, authAttrType);
                     name = attribute.Name;
                     if (string.IsNullOrEmpty(name)) {
-                        name = type.Name;
+                        name = TypeName(type);
                     }
                 } else if (!type.IsGenericType) {
-                    name = type.Name;
+                    name = TypeName(type);
                 } else if (IsWorldWrapperType(type, out var baseName)) {
                     var args = type.GetGenericArguments();
                     var skip = type.DeclaringType!.GetGenericArguments().Length;
@@ -90,7 +90,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
                     var genericIndex = type.Name.IndexOf("`", StringComparison.Ordinal);
                     var typeName = genericIndex == -1
-                        ? type.Name
+                        ? TypeName(type)
                         : type.Name.Substring(0, genericIndex);
                     if (typeName == "Nullable") {
                         name = $"{constraints}?";
@@ -105,6 +105,14 @@ namespace FFS.Libraries.StaticEcs.Unity {
             return name;
         }
 
+        private static string TypeName(Type type) {
+            var name = type.FullName?.Replace('+', '.');
+            if (!string.IsNullOrEmpty(type.Namespace)) {
+                name = name?.Remove(0, type.Namespace.Length);
+            }
+            return name;
+        }
+        
         public static bool IsSystemType(this Type type) {
             return type.Namespace == "FFS.Libraries.StaticEcs.Unity";
         }
