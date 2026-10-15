@@ -16,8 +16,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         string worldTypeName;
         Type worldType;
 
-        bool trackableAdded = false;
-        bool trackableDeleted = false;
 
         bool withExtensions = true;
         bool hasMethod = true;
@@ -83,13 +81,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     val = "Tag";
                 }
             }
-
-            EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("Tracking markers:", EditorStyles.boldLabel);
-            EditorGUI.indentLevel++;
-            trackableAdded = EditorGUILayout.Toggle("ITrackableAdded", trackableAdded);
-            trackableDeleted = EditorGUILayout.Toggle("ITrackableDeleted", trackableDeleted);
-            EditorGUI.indentLevel--;
 
             EditorGUILayout.Space(10);
             withColor = EditorGUILayout.Toggle("Editor color", withColor);
@@ -208,8 +199,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 }
             }
             var tagInterfaces = $"ITag, ITagConfig<{tagName}>";
-            if (trackableAdded) tagInterfaces += ", ITrackableAdded";
-            if (trackableDeleted) tagInterfaces += ", ITrackableDeleted";
             sb.AppendLine($"{pad}public struct {tagName} : {tagInterfaces} {{");
             sb.AppendLine($"{pad}    public TagTypeConfig<{tagName}> Config() => new(guid: new(\"{GUID.Generate().ToString()}\"));");
             sb.AppendLine($"{pad}}}");

@@ -30,9 +30,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         bool withHooks = false;
 
         bool disableable = false;
-        bool trackableAdded = false;
-        bool trackableDeleted = false;
-        bool trackableChanged = false;
 
         bool withExtensions = true;
         bool refMethod = true;
@@ -116,9 +113,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUILayout.LabelField("Markers:", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
             disableable = EditorGUILayout.Toggle("IDisableable", disableable);
-            trackableAdded = EditorGUILayout.Toggle("ITrackableAdded", trackableAdded);
-            trackableDeleted = EditorGUILayout.Toggle("ITrackableDeleted", trackableDeleted);
-            trackableChanged = EditorGUILayout.Toggle("ITrackableChanged", trackableChanged);
             EditorGUI.indentLevel--;
 
             EditorGUILayout.Space(10);
@@ -248,9 +242,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
             var interfaces = $"IComponent, IComponentConfig<{componentName}>";
             if (disableable) interfaces += ", IDisableable";
-            if (trackableAdded) interfaces += ", ITrackableAdded";
-            if (trackableDeleted) interfaces += ", ITrackableDeleted";
-            if (trackableChanged) interfaces += ", ITrackableChanged";
             sb.AppendLine($"{pad}public struct {componentName} : {interfaces} {{");
             sb.AppendLine($"{pad}    // TODO Write your component fields");
             sb.AppendLine("");
