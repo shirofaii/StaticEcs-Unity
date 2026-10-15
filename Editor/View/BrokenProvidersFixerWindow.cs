@@ -667,6 +667,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 case nameof(MultiProvider): return ConfigKind.Multi;
             }
             // Unity-encoded inner wrapper class: "World`1/<Wrapper>`1[[...]]"
+            className = GuidTypeRegistry.NormalizeWrapperClassName(className);
             if (className.StartsWith("World`1/Link`1", StringComparison.Ordinal)) return ConfigKind.Link;
             if (className.StartsWith("World`1/Links`1", StringComparison.Ordinal)) return ConfigKind.Links;
             if (className.StartsWith("World`1/Multi`1", StringComparison.Ordinal)) return ConfigKind.Multi;

@@ -512,8 +512,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             baseName = null;
             if (!type.IsGenericType) return false;
             var dt = type.DeclaringType;
-            if (dt == null || !dt.IsGenericType) return false;
-            if (dt.GetGenericTypeDefinition().FullName != "FFS.Libraries.StaticEcs.World`1") return false;
+            if (dt != typeof(World)) return false;
             var n = type.Name;
             if (n.StartsWith("Link`")) {
                 baseName = "Link";

@@ -72,11 +72,21 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         // Parses Unity's encoded wrapper class string of form:
         //   "World`1/<Wrapper>`1[[<WTypeFullName>, <WTypeAsm>],[<InnerFullName>, <InnerAsm>]]"
         // and extracts (cls, ns, asm) of the inner generic argument.
+        internal static string NormalizeWrapperClassName(string className) {
+            const string singleWorldPrefix = "World/";
+            if (className == null || !className.StartsWith(singleWorldPrefix, StringComparison.Ordinal)) return className;
+            var argsStart = className.IndexOf("[[", singleWorldPrefix.Length, StringComparison.Ordinal);
+            if (argsStart < 0) return className;
+            return "World`1/" + className.Substring(singleWorldPrefix.Length, argsStart - singleWorldPrefix.Length)
+                   + "[[World, World],[" + className.Substring(argsStart + 2);
+        }
+
         internal static bool TryParseWrapperInnerIdentity(string className, ConfigKind kind, out string innerCls, out string innerNs, out string innerAsm) {
             innerCls = null;
             innerNs = null;
             innerAsm = null;
             if (string.IsNullOrEmpty(className)) return false;
+            className = NormalizeWrapperClassName(className);
 
             var wrapperName = WrapperNestedName(kind);
             if (wrapperName == null) return false;
@@ -169,6 +179,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         // For ordinary class names returns the name with the back-tick arity suffix stripped.
         public static string PrettyMissingClassName(string className) {
             if (string.IsNullOrEmpty(className)) return className;
+            className = NormalizeWrapperClassName(className);
             const string outerPrefix = "World`1/";
             if (className.StartsWith(outerPrefix, StringComparison.Ordinal)) {
                 var afterOuter = outerPrefix.Length;
