@@ -35,7 +35,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private static void Init() {
             var componentTypes = new List<Type>();
             var tagTypes = new List<Type>();
-            var eventTypes = new List<Type>();
             var entityTypes = new List<EditorEntityTypeMeta>();
             var linkTypes = new List<Type>();
             var linksTypes = new List<Type>();
@@ -77,10 +76,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                             tagTypes.Add(type);
                         }
 
-                        if (interfaces.Contains(typeof(IEvent))) {
-                            eventTypes.Add(type);
-                        }
-
                         if (interfaces.Contains(typeof(IEntityType))) {
                             var meta = CreateEntityTypeMeta(type);
                             if (meta != null) {
@@ -120,11 +115,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     changed |= RegisterGuid(ConfigKind.Tag, worldType, type, ws);
                 }
 
-                foreach (var type in eventTypes) {
-                    HandleEventMeta(data, type);
-                    changed |= RegisterGuid(ConfigKind.Event, worldType, type, ws);
-                }
-
                 data.EntityTypes.AddRange(entityTypes);
 
                 var worldOpenType = typeof(World<>);
@@ -158,7 +148,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private static void RegisterSourceLookup(Type type) {
             if (type.IsGenericTypeDefinition) return;
             if (!(typeof(IComponentOrTag).IsAssignableFrom(type)
-                  || typeof(IEvent).IsAssignableFrom(type)
                   || typeof(IResource).IsAssignableFrom(type)
                   || typeof(ISystem).IsAssignableFrom(type)
                   || typeof(ILinkType).IsAssignableFrom(type)
@@ -265,7 +254,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             var configOpenType = kind switch {
                 ConfigKind.Component => typeof(IComponentConfig<>),
                 ConfigKind.Tag => typeof(ITagConfig<>),
-                ConfigKind.Event => typeof(IEventConfig<>),
                 ConfigKind.Link => typeof(ILinkConfig<>),
                 ConfigKind.Links => typeof(ILinksConfig<>),
                 ConfigKind.Multi => typeof(IMultiComponentConfig<>),
@@ -323,7 +311,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             data.Components.RemoveAll(meta => !handle.TryGetComponentsHandle(meta.Type, out _));
             data.Tags.RemoveAll(meta => !handle.TryGetComponentsHandle(meta.Type, out _));
-            data.Events.RemoveAll(meta => !handle.TryGetEventsHandle(meta.Type, out _));
             data.EntityTypes.RemoveAll(meta => !handle.IsEntityTypeRegistered(meta.Id));
 
             foreach (var compHandle in handle.GetAllComponentsHandles()) {
@@ -336,13 +323,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     if (data.Components.Find(meta => meta.Type == type) == null) {
                         HandleComponentMeta(data, type);
                     }
-                }
-            }
-
-            foreach (var eventsHandle in handle.GetAllEventsHandles()) {
-                var type = eventsHandle.EventType;
-                if (data.Events.Find(meta => meta.Type == type) == null) {
-                    HandleEventMeta(data, type);
                 }
             }
 
@@ -405,31 +385,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             data.Tags.Add(new EditorEntityDataMeta(type, name, fullName, -1f, 46f, null, null));
         }
 
-        private static void HandleEventMeta(WorldMetaData data, Type type) {
-            var fullName = "";
-            var name = "";
-
-            var (n, fn) = NameAttribute(type);
-            fullName = fn ?? fullName;
-            name = n ?? name;
-
-            if (string.IsNullOrEmpty(fullName)) {
-                fullName = type.EditorFullTypeName();
-            }
-
-            if (string.IsNullOrEmpty(name)) {
-                name = type.EditorTypeName();
-            }
-
-            if (data.Events.Find(meta => meta.FullName == fullName) != null) {
-                return;
-            }
-
-            var (field, property, width) = FindValueAttribute(type);
-
-            data.Events.Add(new EditorEventDataMeta(type, name, fullName, width, 70f, field, property));
-        }
-
         private static EditorEntityTypeMeta CreateEntityTypeMeta(Type type) {
             var (n, _) = NameAttribute(type);
             var name = n ?? type.EditorTypeName();
@@ -480,7 +435,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         internal static FieldInfo[] GetCachedSerializableType(Type type) {
             if (!_typesCache.TryGetValue(type, out var fields)) {
-                if (!Attribute.IsDefined(type, typeof(SerializableAttribute)) && !typeof(IComponent).IsAssignableFrom(type) && !typeof(IEvent).IsAssignableFrom(type) && !typeof(ISystem).IsAssignableFrom(type) && !HasShowAttribute(type)) {
+                if (!Attribute.IsDefined(type, typeof(SerializableAttribute)) && !typeof(IComponent).IsAssignableFrom(type) && !typeof(ISystem).IsAssignableFrom(type) && !HasShowAttribute(type)) {
                     fields = Array.Empty<FieldInfo>();
                     _typesCache[type] = fields;
                     return fields;
@@ -538,7 +493,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         public readonly Type WorldType;
         public readonly List<EditorEntityDataMeta> Components = new();
         public readonly List<EditorEntityDataMeta> Tags = new();
-        public readonly List<EditorEventDataMeta> Events = new();
         public readonly List<EditorEntityTypeMeta> EntityTypes = new();
         public bool Enriched;
 
@@ -549,59 +503,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         public string GetEntityTypeName(byte id) {
             var meta = EntityTypes.Find(m => m.Id == id);
             return meta != null ? meta.Name : $"Unknown({id})";
-        }
-    }
-
-    public class EditorEventDataMeta {
-        public readonly Type Type;
-        public readonly string Name;
-        public readonly string FullName;
-        public readonly FieldInfo FieldInfo;
-        public readonly PropertyInfo PropertyInfo;
-        private readonly float _extraWidth;
-        private readonly float _offsetDelta;
-        private float _width = -1f;
-        private GUILayoutOption[] _layout;
-        private GUILayoutOption[] _layoutWithOffset;
-
-        public float Width {
-            get {
-                if (_width < 0f) _width = Math.Max(GUI.skin.label.CalcSize(new GUIContent(Name)).x, _extraWidth);
-                return _width;
-            }
-        }
-
-        public GUILayoutOption[] Layout => _layout ??= new[] { GUILayout.Width(Width), GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight) };
-        public GUILayoutOption[] LayoutWithOffset => _layoutWithOffset ??= new[] { GUILayout.Width(Width + _offsetDelta), GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight) };
-
-        public EditorEventDataMeta(Type type, string name, string fullName, float extraWidth, float offsetDelta, FieldInfo fieldInfo, PropertyInfo propertyInfo) {
-            Type = type;
-            Name = name;
-            FullName = fullName;
-            _extraWidth = extraWidth;
-            _offsetDelta = offsetDelta;
-            FieldInfo = fieldInfo;
-            PropertyInfo = propertyInfo;
-        }
-
-        protected EditorEventDataMeta(EditorEventDataMeta other) {
-            Type = other.Type;
-            Name = other.Name;
-            FullName = other.FullName;
-            _extraWidth = other._extraWidth;
-            _offsetDelta = other._offsetDelta;
-            FieldInfo = other.FieldInfo;
-            PropertyInfo = other.PropertyInfo;
-        }
-
-        public bool TryGetTableField(out FieldInfo field) {
-            field = FieldInfo;
-            return field != null;
-        }
-
-        public bool TryGetTableProperty(out PropertyInfo field) {
-            field = PropertyInfo;
-            return field != null;
         }
     }
 

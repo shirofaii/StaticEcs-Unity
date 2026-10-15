@@ -6,7 +6,7 @@ using UnityEngine;
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
     public enum ConfigKind {
-        Component, Tag, Event,
+        Component, Tag,
         Link, Links, Multi
     }
 
@@ -227,7 +227,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private static List<StaticEcsTypeGuidRegistry.Entry> EntriesFor(StaticEcsTypeGuidRegistry.WorldSettings ws, ConfigKind k) => k switch {
             ConfigKind.Component => ws.components,
             ConfigKind.Tag => ws.tags,
-            ConfigKind.Event => ws.events,
             ConfigKind.Link => ws.links,
             ConfigKind.Links => ws.linksList,
             ConfigKind.Multi => ws.multi,

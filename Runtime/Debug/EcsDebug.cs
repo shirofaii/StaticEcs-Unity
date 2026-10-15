@@ -22,7 +22,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
         #endif
         #endif
 
-        public static void AddWorld<TSystemsType>(int eventHistoryCount = 8192, Func<EntityGID, string> windowEntityNameFunction = null, short systemOrder = short.MaxValue)
+        public static void AddWorld<TSystemsType>(Func<EntityGID, string> windowEntityNameFunction = null, short systemOrder = short.MaxValue)
             where TSystemsType : struct, ISystemsType {
             #if UNITY_EDITOR
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
@@ -32,13 +32,10 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
             var worldData = new WorldData<TWorld> {
                 Handle = World<TWorld>.Data.Handle,
-                Events = new PageRingBuffer<EventData>(Math.Max(eventHistoryCount, 8)),
-                EventsReceived = new Dictionary<Type, int>(),
                 WindowNameFunction = windowEntityNameFunction,
             };
 
             StaticEcsDebugData.Worlds[typeof(TWorld)] = worldData;
-            World<TWorld>.Data.Instance.EventListener = worldData;
             DebugViewSystem = new DebugViewSystem<TWorld>();
             World<TWorld>.Systems<TSystemsType>.Add(DebugViewSystem, systemOrder);
             #endif
@@ -50,7 +47,6 @@ namespace FFS.Libraries.StaticEcs.Unity {
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
             DebugViewSystem = null;
             StaticEcsDebugData.Worlds.Remove(typeof(TWorld));
-            World<TWorld>.Data.Instance.EventListener = default;
             #endif
             #endif
         }

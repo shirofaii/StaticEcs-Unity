@@ -4,13 +4,12 @@ using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
-    public abstract class StaticEcsView<TWorld, TEntityProvider, TEventProvider> : EditorWindow, IStaticEcsViewNavigation
+    public abstract class StaticEcsView<TWorld, TEntityProvider> : EditorWindow, IStaticEcsViewNavigation
         #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
         , IStaticEcsViewConfigHost
         #endif
         where TWorld : struct, IWorldType
-        where TEntityProvider : StaticEcsEntityProvider<TWorld>
-        where TEventProvider : StaticEcsEventProvider<TWorld> {
+        where TEntityProvider : StaticEcsEntityProvider<TWorld> {
 
         private readonly List<IStaticEcsViewTab> _tabs = new();
         private IStaticEcsViewTab _selectedTab;
@@ -36,7 +35,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
                 _tabs.Add(new StaticEcsViewEntitiesTab<TWorld, TEntityProvider>());
                 _tabs.Add(new StaticEcsViewStatsTab<TWorld>());
-                _tabs.Add(new StaticEcsViewEventsTab<TWorld, TEventProvider>());
                 _tabs.Add(new StaticEcsViewContextTab<TWorld, TEntityProvider>());
                 _tabs.Add(new StaticEcsViewSystemsTab<TWorld>());
                 _tabs.Add(new StaticEcsViewSettingsTab<TWorld>(this));

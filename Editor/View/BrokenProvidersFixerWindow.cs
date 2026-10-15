@@ -18,7 +18,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         private enum ScanMode { ActiveScene, PrefabsFolder }
 
-        private const int EventSlot = -1;
         private const int UnknownSlot = -2;
 
         private class Occurrence {
@@ -236,8 +235,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private void DrawOccurrence(Group g, Occurrence o) {
             EditorGUILayout.BeginHorizontal();
             string slotLabel;
-            if (o.SlotIndex == EventSlot) slotLabel = "event";
-            else if (o.SlotIndex == UnknownSlot) slotLabel = "?";
+            if (o.SlotIndex == UnknownSlot) slotLabel = "?";
             else slotLabel = $"#{o.SlotIndex}";
             var line = $"{o.SourcePath}  —  {o.ProviderPath}  [{slotLabel}]";
             EditorGUILayout.LabelField(line, EditorStyles.miniLabel);
@@ -362,24 +360,14 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
                 using var so = new SerializedObject(prov);
                 var listProp = so.FindProperty("providers");
-                var eventProp = so.FindProperty("eventTemplate");
 
-                // Bucket: events first, then unknowns (targeted clear by refId), then real indices desc.
                 var realSlots = new List<Occurrence>();
                 var unknownSlots = new List<Occurrence>();
-                var hasEvent = false;
                 foreach (var o in occurrences) {
-                    if (o.SlotIndex == EventSlot) hasEvent = true;
-                    else if (o.SlotIndex == UnknownSlot) unknownSlots.Add(o);
+                    if (o.SlotIndex == UnknownSlot) unknownSlots.Add(o);
                     else if (o.SlotIndex >= 0) realSlots.Add(o);
                 }
                 realSlots.Sort((a, b) => b.SlotIndex.CompareTo(a.SlotIndex));
-
-                if (hasEvent && eventProp != null && eventProp.propertyType == SerializedPropertyType.ManagedReference) {
-                    eventProp.managedReferenceValue = null;
-                    foreach (var o in occurrences) if (o.SlotIndex == EventSlot) fixedOccurrences.Add(o);
-                    totalRemoved++;
-                }
 
                 foreach (var o in unknownSlots) {
                     if (TryClearMissingReferenceById(so, o.Missing.referenceId)) {
@@ -499,9 +487,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     case ConfigKind.Tag:
                         foreach (var m in meta.Tags) if (m.Type != null && seen.Add(m.Type)) yield return m.Type;
                         break;
-                    case ConfigKind.Event:
-                        foreach (var m in meta.Events) if (m.Type != null && seen.Add(m.Type)) yield return m.Type;
-                        break;
                 }
             }
         }
@@ -592,12 +577,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                             }
                         }
                     }
-                }
-                var eventProp = so.FindProperty("eventTemplate");
-                if (eventProp != null && eventProp.propertyType == SerializedPropertyType.ManagedReference
-                    && eventProp.managedReferenceValue == null) {
-                    var rid = eventProp.managedReferenceId;
-                    if (rid > 0) slotMap[rid] = (EventSlot, ConfigKind.Event, false);
                 }
             }
 

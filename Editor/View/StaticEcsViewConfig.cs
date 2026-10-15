@@ -45,17 +45,10 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
     }
 
     [Serializable]
-    public class EventsSettings {
-        public bool latest = true;
-        public List<string> filterTypeNames = new();
-    }
-
-    [Serializable]
     public class StatsSettings {
         public bool showNotRegistered;
         public int fragmentationThreshold = 512;
         public bool foldoutEntityTypes = true;
-        public bool foldoutEvents = true;
         public bool foldoutComponents = true;
         public bool foldoutTags = true;
     }
@@ -70,7 +63,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         public string worldTypeFullName;
         public MainSettings main = new();
         public EntitiesSettings entities = new();
-        public EventsSettings events = new();
         public StatsSettings stats = new();
         public SystemsSettings systems = new();
     }

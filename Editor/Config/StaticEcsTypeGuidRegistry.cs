@@ -33,7 +33,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             public string worldTypeFullName;
             public List<Entry> components = new();
             public List<Entry> tags = new();
-            public List<Entry> events = new();
             public List<Entry> links = new();
             public List<Entry> linksList = new();
             public List<Entry> multi = new();
@@ -42,7 +41,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 var entries = kind switch {
                     ConfigKind.Component => components,
                     ConfigKind.Tag => tags,
-                    ConfigKind.Event => events,
                     ConfigKind.Link => links,
                     ConfigKind.Links => linksList,
                     ConfigKind.Multi => multi,

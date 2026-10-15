@@ -63,10 +63,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         private readonly ComponentsHandle?[] componentHandles;
         private readonly ComponentsHandle?[] tagHandles;
-        private readonly EventsHandle?[] eventHandles;
         private readonly int[] componentOrder;
         private readonly int[] tagOrder;
-        private readonly int[] eventOrder;
         private readonly List<EditorEntityTypeMeta> registeredEntityTypes = new();
 
         private readonly WorldHandle _handle;
@@ -77,7 +75,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private bool _showNotRegistered = false;
         private int _fragmentationThreshold = 512;
         private bool _foldoutEntityTypes = true;
-        private bool _foldoutEvents = true;
         private bool _foldoutComponents = true;
         private bool _foldoutTags = true;
         private Vector2 _verticalScroll = Vector2.zero;
@@ -87,7 +84,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             settings.showNotRegistered = _showNotRegistered;
             settings.fragmentationThreshold = _fragmentationThreshold;
             settings.foldoutEntityTypes = _foldoutEntityTypes;
-            settings.foldoutEvents = _foldoutEvents;
             settings.foldoutComponents = _foldoutComponents;
             settings.foldoutTags = _foldoutTags;
         }
@@ -96,7 +92,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             _showNotRegistered = settings.showNotRegistered;
             _fragmentationThreshold = settings.fragmentationThreshold;
             _foldoutEntityTypes = settings.foldoutEntityTypes;
-            _foldoutEvents = settings.foldoutEvents;
             _foldoutComponents = settings.foldoutComponents;
             _foldoutTags = settings.foldoutTags;
         }
@@ -169,13 +164,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 }
             }
 
-            eventHandles = new EventsHandle?[_worldMeta.Events.Count];
-            for (var i = 0; i < _worldMeta.Events.Count; i++) {
-                if (_handle.TryGetEventsHandle(_worldMeta.Events[i].Type, out var handle)) {
-                    eventHandles[i] = handle;
-                }
-            }
-
             for (var i = 0; i < _worldMeta.EntityTypes.Count; i++) {
                 if (_handle.IsEntityTypeRegistered(_worldMeta.EntityTypes[i].Id)) {
                     registeredEntityTypes.Add(_worldMeta.EntityTypes[i]);
@@ -184,29 +172,9 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             componentOrder = BuildSortedOrder(_worldMeta.Components);
             tagOrder = BuildSortedOrder(_worldMeta.Tags);
-            eventOrder = BuildSortedEventOrder(_worldMeta.Events);
         }
 
         private static int[] BuildSortedOrder(List<EditorEntityDataMeta> metas) {
-            var order = new int[metas.Count];
-            for (var i = 0; i < order.Length; i++) order[i] = i;
-            Array.Sort(order, (a, b) => {
-                var aSys = metas[a].Type.IsSystemType();
-                var bSys = metas[b].Type.IsSystemType();
-                if (aSys != bSys) return aSys ? 1 : -1;
-                var aHasColor = metas[a].Type.EditorTypeColor(out var aColor);
-                var bHasColor = metas[b].Type.EditorTypeColor(out var bColor);
-                if (aHasColor != bHasColor) return aHasColor ? -1 : 1;
-                if (aHasColor) {
-                    var colorCmp = string.Compare(ColorToKey(aColor), ColorToKey(bColor), StringComparison.Ordinal);
-                    if (colorCmp != 0) return colorCmp;
-                }
-                return string.Compare(metas[a].Name, metas[b].Name, StringComparison.Ordinal);
-            });
-            return order;
-        }
-
-        private static int[] BuildSortedEventOrder(List<EditorEventDataMeta> metas) {
             var order = new int[metas.Count];
             for (var i = 0; i < order.Length; i++) order[i] = i;
             Array.Sort(order, (a, b) => {
@@ -253,7 +221,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             _verticalScroll = BeginScrollView(_verticalScroll);
 
             DrawEntityTypeStats();
-            DrawEventsPoolsStats(eventOrder);
             DrawHandleStats("Components:", _worldMeta.Components, componentHandles, componentOrder, true, drawCount, segmentsCount, ref _foldoutComponents);
             DrawHandleStats("Tags:", _worldMeta.Tags, tagHandles, tagOrder, true, drawCount, segmentsCount, ref _foldoutTags);
 
@@ -499,60 +466,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EndHorizontal();
 
             Space(10);
-        }
-
-        private void DrawEventsPoolsStats(int[] order) {
-            _foldoutEvents = EditorGUILayout.Foldout(_foldoutEvents, "Events:", true, Ui.FoldoutStyleTheme);
-            if (!_foldoutEvents) {
-                Space(20);
-                return;
-            }
-
-            BeginHorizontal();
-            SelectableLabel("Name", Ui.LabelStyleThemeCenter, Ui.WidthLine(200));
-            Ui.DrawSeparator();
-            SelectableLabel("Count", Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
-            Ui.DrawSeparator();
-            SelectableLabel("Capacity", Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
-            Ui.DrawSeparator();
-            SelectableLabel("Receivers", Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
-            Ui.DrawSeparator();
-            EndHorizontal();
-
-            for (var o = 0; o < order.Length; o++) {
-                var i = order[o];
-                var idx = _worldMeta.Events[i];
-                var handle = eventHandles[i];
-                if (handle.HasValue) {
-                    BeginHorizontal();
-                    if (idx.Type.EditorTypeColor(out var color)) {
-                        SelectableLabel(idx.Name, Ui.LabelStyleThemeLeftColor(color), Ui.WidthLine(200));
-                    } else {
-                        SelectableLabel(idx.Name, Ui.WidthLine(200));
-                    }
-                    Ui.DrawSeparator();
-                    LabelField(handle.Value.NotDeletedCount().ToString(), Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
-                    Ui.DrawSeparator();
-                    LabelField(handle.Value.Capacity().ToString(), Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
-                    Ui.DrawSeparator();
-                    LabelField(handle.Value.ReceiversCount().ToString(), Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
-                    Ui.DrawSeparator();
-                    EndHorizontal();
-                } else if (_showNotRegistered) {
-                    BeginHorizontal();
-                    SelectableLabel(idx.Name, Ui.WidthLine(200));
-                    Ui.DrawSeparator();
-                    LabelField("N/A", Ui.LabelStyleGreyCenter, Ui.WidthLine(90));
-                    Ui.DrawSeparator();
-                    LabelField("N/A", Ui.LabelStyleGreyCenter, Ui.WidthLine(90));
-                    Ui.DrawSeparator();
-                    LabelField("N/A", Ui.LabelStyleGreyCenter, Ui.WidthLine(90));
-                    Ui.DrawSeparator();
-                    EndHorizontal();
-                }
-            }
-
-            Space(20);
         }
 
         public static UnityEngine.Font GetFont()
