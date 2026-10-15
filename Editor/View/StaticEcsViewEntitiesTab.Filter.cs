@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
-    public partial class EntitiesDrawer<TWorld, TEntityProvider> where TWorld : struct, IWorldType where TEntityProvider : StaticEcsEntityProvider<TWorld> {
+    public partial class EntitiesDrawer {
         private int _maxEntityResult = 100;
         private int _currentEntityCount;
         private bool _filterActive;
@@ -47,7 +47,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
 
         private void SegmentFilter() {
-            var system = EcsDebug<TWorld>.DebugViewSystem;
+            var system = EcsDebug.DebugViewSystem;
             if (system == null || !system.IsSegmentFilterActive) return;
 
             EditorGUILayout.BeginHorizontal();

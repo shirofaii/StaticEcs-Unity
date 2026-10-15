@@ -19,19 +19,19 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public IComponent Value;
     }
 
-    public class EntitySnapshot<TWorld> where TWorld : struct, IWorldType {
-        public World<TWorld>.Entity[] Entities;
+    public class EntitySnapshot {
+        public World.Entity[] Entities;
         public int Count;
 
         public EntitySnapshot(int capacity) {
-            Entities = new World<TWorld>.Entity[capacity];
+            Entities = new World.Entity[capacity];
             Count = 0;
         }
     }
 
-    public class DebugViewSystem<TWorld> : ISystem where TWorld : struct, IWorldType {
+    public class DebugViewSystem : ISystem {
         private readonly ConcurrentQueue<DebugCommand> _commandQueue = new();
-        private EntitySnapshot<TWorld> _snapshot;
+        private EntitySnapshot _snapshot;
         private CompositeHandleFilter _filter;
         private ComponentsHandle? _sortComponentHandle;
         private bool _segmentFilterActive;
@@ -50,7 +50,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             _commandQueue.Enqueue(command);
         }
 
-        public EntitySnapshot<TWorld> ReadSnapshot() {
+        public EntitySnapshot ReadSnapshot() {
             return _snapshot;
         }
 
@@ -76,7 +76,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public uint SegmentFilterIdx => _segmentFilterIdx;
 
         public void Init() {
-            _snapshot = new EntitySnapshot<TWorld>(256);
+            _snapshot = new EntitySnapshot(256);
             _stopwatch.Start();
         }
 
@@ -98,37 +98,37 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
         private void ProcessCommands() {
             while (_commandQueue.TryDequeue(out var cmd)) {
-                if (!cmd.EntityGid.TryUnpack<TWorld>(out var entity)) {
+                if (!cmd.EntityGid.TryUnpack(out var entity)) {
                     continue;
                 }
 
                 switch (cmd.Type) {
                     case DebugCommandType.SetComponent:
-                        if (World<TWorld>.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var setHandle)) {
+                        if (World.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var setHandle)) {
                             setHandle.SetRaw(entity.ID, cmd.Value);
                         }
 
                         break;
                     case DebugCommandType.Delete:
-                        if (World<TWorld>.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var delHandle)) {
+                        if (World.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var delHandle)) {
                             delHandle.Delete(entity.ID);
                         }
 
                         break;
                     case DebugCommandType.EnableComponent:
-                        if (World<TWorld>.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var enHandle)) {
+                        if (World.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var enHandle)) {
                             enHandle.Enable(entity.ID);
                         }
 
                         break;
                     case DebugCommandType.DisableComponent:
-                        if (World<TWorld>.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var disHandle)) {
+                        if (World.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var disHandle)) {
                             disHandle.Disable(entity.ID);
                         }
 
                         break;
                     case DebugCommandType.SetTag:
-                        if (World<TWorld>.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var tagSetHandle)) {
+                        if (World.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var tagSetHandle)) {
                             tagSetHandle.Set(entity.ID);
                         }
 
@@ -163,7 +163,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
             if (hasSortHandle) {
                 var sortFilter = BuildSortFilter(filter);
-                foreach (var entity in World<TWorld>.Query(sortFilter).Entities(EntityStatusType.Any)) {
+                foreach (var entity in World.Query(sortFilter).Entities(EntityStatusType.Any)) {
                     if (_snapshot.Count >= max) break;
                     _snapshot.Entities[_snapshot.Count++] = entity;
                 }
@@ -172,19 +172,19 @@ namespace FFS.Libraries.StaticEcs.Unity {
             if (_snapshot.Count < max) {
                 var sortedCount = _snapshot.Count;
                 if (filter.IsValid) {
-                    foreach (var entity in World<TWorld>.Query(filter).Entities(EntityStatusType.Any)) {
+                    foreach (var entity in World.Query(filter).Entities(EntityStatusType.Any)) {
                         if (_snapshot.Count >= max) break;
                         if (!IsAlreadyInSnapshot(entity, sortedCount)) {
                             _snapshot.Entities[_snapshot.Count++] = entity;
                         }
                     }
                 } else if (!hasSortHandle) {
-                    foreach (var entity in World<TWorld>.Query().Entities(EntityStatusType.Any)) {
+                    foreach (var entity in World.Query().Entities(EntityStatusType.Any)) {
                         if (_snapshot.Count >= max) break;
                         _snapshot.Entities[_snapshot.Count++] = entity;
                     }
                 } else {
-                    foreach (var entity in World<TWorld>.Query().Entities(EntityStatusType.Any)) {
+                    foreach (var entity in World.Query().Entities(EntityStatusType.Any)) {
                         if (_snapshot.Count >= max) break;
                         if (!HasSortHandle(entity)) {
                             _snapshot.Entities[_snapshot.Count++] = entity;
@@ -204,7 +204,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
                 while (mask != 0 && _snapshot.Count < max) {
                     var bit = Utils.PopLsb(ref mask);
                     var entityId = (uint) (baseEntityId + blockIdx * Const.ENTITIES_IN_BLOCK + bit);
-                    var entity = new World<TWorld>.Entity(entityId);
+                    var entity = new World.Entity(entityId);
                     if (!entity.IsDestroyed) {
                         _snapshot.Entities[_snapshot.Count++] = entity;
                     }
@@ -226,12 +226,12 @@ namespace FFS.Libraries.StaticEcs.Unity {
             return sortFilter;
         }
 
-        private bool HasSortHandle(World<TWorld>.Entity entity) {
+        private bool HasSortHandle(World.Entity entity) {
             if (_sortComponentHandle.HasValue) return _sortComponentHandle.Value.Has(entity.ID);
             return false;
         }
 
-        private bool IsAlreadyInSnapshot(World<TWorld>.Entity entity, int sortedCount) {
+        private bool IsAlreadyInSnapshot(World.Entity entity, int sortedCount) {
             if (sortedCount == 0) return false;
             if (!HasSortHandle(entity)) return false;
             return true;

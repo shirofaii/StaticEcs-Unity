@@ -4,18 +4,24 @@ using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
-    public abstract class StaticEcsView<TWorld, TEntityProvider> : EditorWindow, IStaticEcsViewNavigation
+    public class StaticEcsView : EditorWindow, IStaticEcsViewNavigation
         #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
         , IStaticEcsViewConfigHost
         #endif
-        where TWorld : struct, IWorldType
-        where TEntityProvider : StaticEcsEntityProvider<TWorld> {
+    {
+
+        [MenuItem("Window/StaticEcs")]
+        public static void OpenWindow() {
+            var window = GetWindow<StaticEcsView>();
+            window.Show();
+            window.Focus();
+        }
 
         private readonly List<IStaticEcsViewTab> _tabs = new();
         private IStaticEcsViewTab _selectedTab;
         private string _pendingTabSwitch;
 
-        private AbstractWorldData _currentWorldData;
+        private WorldData _currentWorldData;
 
         internal float drawRate = 0.5f;
         internal float drawFrames = 2;
@@ -29,15 +35,15 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         public void Init() {
             if (!_initialized || _tabs.Count == 0) {
-                titleContent = new GUIContent($"Static ECS - {typeof(TWorld).Name}");
-                _worldKey = typeof(TWorld).FullName;
+                titleContent = new GUIContent($"Static ECS - {typeof(World).Name}");
+                _worldKey = typeof(World).FullName;
 
                 #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-                _tabs.Add(new StaticEcsViewEntitiesTab<TWorld, TEntityProvider>());
-                _tabs.Add(new StaticEcsViewStatsTab<TWorld>());
-                _tabs.Add(new StaticEcsViewContextTab<TWorld, TEntityProvider>());
-                _tabs.Add(new StaticEcsViewSystemsTab<TWorld>());
-                _tabs.Add(new StaticEcsViewSettingsTab<TWorld>(this));
+                _tabs.Add(new StaticEcsViewEntitiesTab());
+                _tabs.Add(new StaticEcsViewStatsTab());
+                _tabs.Add(new StaticEcsViewContextTab());
+                _tabs.Add(new StaticEcsViewSystemsTab());
+                _tabs.Add(new StaticEcsViewSettingsTab(this));
                 #endif
 
                 var config = StaticEcsViewConfig.Active;
@@ -59,7 +65,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     _selectedTab = _tabs[0];
                 }
 
-                EntityInspectorRegistry.ShowEntityHandlers[typeof(TWorld)] = EntityInspectorHelper<TWorld, TEntityProvider>.ShowWindowForEntity;
+                EntityInspectorRegistry.ShowEntity = EntityInspectorHelper.ShowWindowForEntity;
 
                 _initialized = true;
             }
@@ -93,7 +99,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             Init();
 
-            if (StaticEcsDebugData.Worlds.TryGetValue(typeof(TWorld), out var worldData)) {
+            var worldData = StaticEcsDebugData.Current;
+            if (worldData != null) {
                 if (_currentWorldData != worldData) {
                     SetWorldData(worldData);
                 }
@@ -102,7 +109,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
 
             if (_currentWorldData == null) {
-                EditorGUILayout.HelpBox($"World {typeof(TWorld).Name} is not registered. Call EcsDebug<{typeof(TWorld).Name}>.AddWorld()", MessageType.Warning);
+                EditorGUILayout.HelpBox($"World {typeof(World).Name} is not registered. Call EcsDebug<{typeof(World).Name}>.AddWorld()", MessageType.Warning);
                 return;
             }
 
@@ -184,7 +191,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private void SetWorldData(AbstractWorldData data) {
+        private void SetWorldData(WorldData data) {
             MetaData.EnrichByWorld(data.Handle);
 
             _currentWorldData = data;
@@ -240,7 +247,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
     public interface IStaticEcsViewTab {
         public string Name();
-        public void OnWorldChanged(AbstractWorldData newWorldData);
+        public void OnWorldChanged(WorldData newWorldData);
         public void Draw();
         public void Init();
         public void Destroy();

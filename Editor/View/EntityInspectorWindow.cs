@@ -7,7 +7,7 @@ using UnityEngine;
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
     public static class EntityInspectorRegistry {
-        public static readonly Dictionary<Type, Func<EntityGID, bool>> ShowEntityHandlers = new();
+        public static Func<EntityGID, bool> ShowEntity;
         public static readonly List<Action> PlayModeCleanup = new();
     }
 
@@ -145,15 +145,13 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
     }
 
-    public static class EntityInspectorHelper<TWorld, TProvider>
-        where TWorld : struct, IWorldType
-        where TProvider : StaticEcsEntityProvider<TWorld> {
+    public static class EntityInspectorHelper {
 
-        private static TProvider _inspectorAnchor;
+        private static StaticEcsEntityProvider _inspectorAnchor;
         private static bool _cleanupRegistered;
 
         public static void ShowInInspector(EntityGID gid) {
-            if (gid.Status<TWorld>() != GIDStatus.Active) {
+            if (gid.Status() != GIDStatus.Active) {
                 return;
             }
 
@@ -171,12 +169,12 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUIUtility.PingObject(_inspectorAnchor.gameObject);
         }
 
-        private static TProvider CreateAnchor() {
+        private static StaticEcsEntityProvider CreateAnchor() {
             var go = new GameObject(BuildAnchorName(default, hasEntity: false)) {
                 hideFlags = HideFlags.DontSave,
             };
             UnityEngine.Object.DontDestroyOnLoad(go);
-            var p = go.AddComponent<TProvider>();
+            var p = go.AddComponent<StaticEcsEntityProvider>();
             p.UsageType = UsageType.Manual;
             p.OnCreateType = OnCreateType.None;
             p.onEnableAndDisable = false;
@@ -192,21 +190,21 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         private static string BuildAnchorName(EntityGID gid, bool hasEntity) {
             if (!hasEntity) {
-                return $"[StaticEcs:{typeof(TWorld).Name}]";
+                return $"[StaticEcs:{typeof(World).Name}]";
             }
-            var fn = StaticEcsDebugData.Worlds.TryGetValue(typeof(TWorld), out var worldData) ? worldData.WindowNameFunction : null;
-            return $"[StaticEcs:{typeof(TWorld).Name}] — " + (fn?.Invoke(gid) ?? $"Entity {gid.Id}");
+            var fn = StaticEcsDebugData.Current?.WindowNameFunction;
+            return $"[StaticEcs:{typeof(World).Name}] — " + (fn?.Invoke(gid) ?? $"Entity {gid.Id}");
         }
 
         public static bool ShowWindowForEntity(EntityGID gid) {
-            if (gid.Status<TWorld>() != GIDStatus.Active) {
+            if (gid.Status() != GIDStatus.Active) {
                 return false;
             }
 
-            var nameFunction = StaticEcsDebugData.Worlds.TryGetValue(typeof(TWorld), out var worldData) ? worldData.WindowNameFunction : null;
+            var nameFunction = StaticEcsDebugData.Current?.WindowNameFunction;
             var title = nameFunction?.Invoke(gid) ?? $"Entity {gid.Id}";
 
-            return EntityInspectorWindow.ShowWindow(typeof(TWorld), gid, title,
+            return EntityInspectorWindow.ShowWindow(typeof(World), gid, title,
                 CreateProvider, DrawEntity, IsActual);
         }
 
@@ -215,7 +213,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 hideFlags = HideFlags.NotEditable,
             };
             UnityEngine.Object.DontDestroyOnLoad(go);
-            var provider = go.AddComponent<TProvider>();
+            var provider = go.AddComponent<StaticEcsEntityProvider>();
             provider.EntityGid = gid;
             provider.UsageType = UsageType.Manual;
             provider.OnCreateType = OnCreateType.None;
@@ -224,11 +222,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
 
         private static void DrawEntity(EntityInspectorWindow window) {
-            Drawer.DrawEntity<TWorld, TProvider>((TProvider) window.provider, DrawMode.Viewer);
+            Drawer.DrawEntity((StaticEcsEntityProvider) window.provider, DrawMode.Viewer);
         }
 
         private static bool IsActual(EntityInspectorWindow window) {
-            return ((TProvider) window.provider).EntityIsActual();
+            return ((StaticEcsEntityProvider) window.provider).EntityIsActual();
         }
     }
 

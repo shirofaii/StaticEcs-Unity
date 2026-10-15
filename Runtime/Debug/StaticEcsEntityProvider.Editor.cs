@@ -5,10 +5,10 @@ using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity {
 
-    public abstract partial class StaticEcsEntityProvider<TWorld> {
+    public abstract partial class StaticEcsEntityProvider {
         public virtual bool EntityIsActual() {
-            return World<TWorld>.Status == WorldStatus.Initialized
-                   && entityGid.Status<TWorld>() == GIDStatus.Active;
+            return World.Status == WorldStatus.Initialized
+                   && entityGid.Status() == GIDStatus.Active;
         }
 
         public virtual bool HasComponents() {
@@ -17,13 +17,13 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
         public virtual bool IsDisabled(Type componentType) {
             if (!EntityIsActual()) return false;
-            return World<TWorld>.Data.Handle.TryGetComponentsHandle(componentType, out var handle) && typeof(IDisableable).IsAssignableFrom(componentType) && handle.HasDisabled(EntityGid.Id);
+            return World.Data.Handle.TryGetComponentsHandle(componentType, out var handle) && typeof(IDisableable).IsAssignableFrom(componentType) && handle.HasDisabled(EntityGid.Id);
         }
 
         public virtual void Disable(Type componentType) {
             if (!EntityIsActual()) return;
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+            EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                 Type = DebugCommandType.DisableComponent,
                 EntityGid = EntityGid,
                 TargetType = componentType,
@@ -34,7 +34,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public virtual void Enable(Type componentType) {
             if (!EntityIsActual()) return;
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+            EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                 Type = DebugCommandType.EnableComponent,
                 EntityGid = EntityGid,
                 TargetType = componentType,
@@ -84,7 +84,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             if (EntityIsActual()) {
                 ResetProviderPool();
                 var eid = EntityGid.Id;
-                foreach (var handle in World<TWorld>.Data.Handle.GetAllComponentsHandles()) {
+                foreach (var handle in World.Data.Handle.GetAllComponentsHandles()) {
                     if (handle.IsTag) {
                         if (handle.Has(eid)) {
                             result.Add(RentTagProvider((ITag) handle.DefaultValue()));
@@ -102,8 +102,8 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
         public virtual bool ShouldShowProvider(Type type, bool runtime) {
             if (!EntityIsActual() && !runtime) return true;
-            return World<TWorld>.IsWorldInitialized
-                   && World<TWorld>.Data.Handle.TryGetComponentsHandle(type, out _);
+            return World.IsWorldInitialized
+                   && World.Data.Handle.TryGetComponentsHandle(type, out _);
         }
 
         public virtual void OnSelectProvider(IComponentOrTagProvider provider) {
@@ -139,7 +139,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public virtual void OnDeleteProvider(Type type) {
             if (EntityIsActual()) {
                 #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-                EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+                EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                     Type = DebugCommandType.Delete,
                     EntityGid = EntityGid,
                     TargetType = type,

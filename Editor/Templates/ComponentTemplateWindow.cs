@@ -21,9 +21,9 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         Vector2 scroll;
 
         string nameSpace;
-        string worldName;
-        string worldTypeName;
-        Type worldType;
+        string worldName = "World";
+        string worldTypeName = "World";
+        Type worldType = typeof(World);
 
         bool serialization = false;
         bool unmanaged = false;
@@ -61,22 +61,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
 
         void OnGUI() {
-            if (worldType == null) {
-                for (var i = 0; i < MetaData.WorldsMetaData.Count; i++) {
-                    worldType = MetaData.WorldsMetaData[i].WorldTypeType;
-                    worldName = MetaData.WorldsMetaData[i].EditorName;
-                    worldTypeName = worldType.Name;
-                    break;
-                }
-            }
             scroll = EditorGUILayout.BeginScrollView(scroll);
 
 
             EditorGUILayout.BeginHorizontal();
             {
-                if (Ui.SettingButton) {
-                    DrawWorldMenu();
-                }
                 EditorGUILayout.LabelField("World:", Ui.WidthLine(60));
                 EditorGUILayout.LabelField(worldName, Ui.LabelStyleThemeBold);
                 if (worldType != null && names.Length > 0 && GUILayout.Button("Create Components", Ui.ButtonStyleYellow)) {
@@ -160,24 +149,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUILayout.EndScrollView();
         }
 
-        private void DrawWorldMenu() {
-            var menu = new GenericMenu();
-            for (var i = 0; i < MetaData.WorldsMetaData.Count; i++) {
-                var i1 = i;
-                menu.AddItem(
-                    new GUIContent(MetaData.WorldsMetaData[i].EditorName),
-                    false,
-                    objType => {
-                        worldType = MetaData.WorldsMetaData[i1].WorldTypeType;
-                        worldName = MetaData.WorldsMetaData[i1].EditorName;
-                        worldTypeName = worldType.Name;
-                    },
-                    MetaData.WorldsMetaData[i1].WorldTypeType);
-            }
-
-            menu.ShowAsContext();
-        }
-
         public void CreateFiles() {
             foreach (var componentName in names) {
                 var fileName = $"{path}/{componentName}.cs";
@@ -218,7 +189,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             sb.AppendLine($"#endif");
             sb.AppendLine("using System.Runtime.CompilerServices;", withExtensions);
             sb.AppendLine("using static System.Runtime.CompilerServices.MethodImplOptions;", withExtensions);
-            sb.AppendLine($"using static FFS.Libraries.StaticEcs.World<{worldTypeName}>;", withExtensions);
+            sb.AppendLine($"using static FFS.Libraries.StaticEcs.World;", withExtensions);
             sb.AppendLine();
             sb.AppendLine($"namespace {nameSpace} {{", !string.IsNullOrEmpty(nameSpace));
             sb.AppendLine($"{pad}#if ENABLE_IL2CPP");
@@ -255,25 +226,25 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
             sb.AppendLine();
             if (serialization) {
-                sb.AppendLine($"{pad}    public void Write<TWorld>(ref BinaryPackWriter writer, World<TWorld>.Entity self) where TWorld : struct, IWorldType {{");
+                sb.AppendLine($"{pad}    public void Write(ref BinaryPackWriter writer, World.Entity self) {{");
                 sb.AppendLine($"{pad}        throw new NotImplementedException(); // TODO implement this");
                 sb.AppendLine($"{pad}    }}");
                 sb.AppendLine();
-                sb.AppendLine($"{pad}    public void Read<TWorld>(ref BinaryPackReader reader, World<TWorld>.Entity self, byte version, bool disabled) where TWorld : struct, IWorldType {{");
+                sb.AppendLine($"{pad}    public void Read(ref BinaryPackReader reader, World.Entity self, byte version, bool disabled) {{");
                 sb.AppendLine($"{pad}        throw new NotImplementedException(); // TODO implement this");
                 sb.AppendLine($"{pad}    }}");
                 sb.AppendLine();
             }
             if (withHooks) {
-                sb.AppendLine($"{pad}    public void OnAdd<TWorld>(World<TWorld>.Entity self) where TWorld : struct, IWorldType {{");
+                sb.AppendLine($"{pad}    public void OnAdd(World.Entity self) {{");
                 sb.AppendLine($"{pad}        // TODO implement this");
                 sb.AppendLine($"{pad}    }}");
                 sb.AppendLine();
-                sb.AppendLine($"{pad}    public void OnDelete<TWorld>(World<TWorld>.Entity self, HookReason reason) where TWorld : struct, IWorldType {{");
+                sb.AppendLine($"{pad}    public void OnDelete(World.Entity self, HookReason reason) {{");
                 sb.AppendLine($"{pad}        // TODO implement this");
                 sb.AppendLine($"{pad}    }}");
                 sb.AppendLine();
-                sb.AppendLine($"{pad}    public void CopyTo<TWorld>(World<TWorld>.Entity self, World<TWorld>.Entity other, bool disabled) where TWorld : struct, IWorldType {{");
+                sb.AppendLine($"{pad}    public void CopyTo(World.Entity self, World.Entity other, bool disabled) {{");
                 sb.AppendLine($"{pad}        // TODO implement this");
                 sb.AppendLine($"{pad}    }}");
                 sb.AppendLine();

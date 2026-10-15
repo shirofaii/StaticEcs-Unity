@@ -13,8 +13,7 @@ using Object = UnityEngine.Object;
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
     public static class MetaData {
-        internal static readonly List<(Type WorldTypeType, string EditorName)> WorldsMetaData = new();
-        internal static readonly Dictionary<Type, WorldMetaData> PerWorldMetaData = new();
+        internal static WorldMetaData Meta;
 
         internal static readonly Type UnityObjectType = typeof(Object);
         internal static readonly Type EnumFlagsType = typeof(FlagsAttribute);
@@ -39,7 +38,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             var linkTypes = new List<Type>();
             var linksTypes = new List<Type>();
             var multiTypes = new List<Type>();
-            var worldTypes = new List<Type>();
 
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()) {
                 Type[] assemblyTypes;
@@ -52,20 +50,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     RegisterSourceLookup(type);
                     if (!type.IsValueType) continue;
                     var interfaces = type.GetInterfaces();
-
-                    if (interfaces.Contains(typeof(IWorldType))) {
-                        var name = type.FullName!;
-                        var (n, _) = NameAttribute(type);
-                        name = n ?? name;
-
-                        if (WorldsMetaData.Find(tuple => tuple.WorldTypeType == type).WorldTypeType != null) {
-                            Debug.LogError($"World id `{name}` already registered, type `{type}` ignored");
-                            continue;
-                        }
-
-                        WorldsMetaData.Add((type, name));
-                        worldTypes.Add(type);
-                    }
 
                     if (!type.IsGenericType) {
                         if (interfaces.Contains(typeof(IComponent))) {
@@ -101,44 +85,41 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             var reg = StaticEcsTypeGuidRegistry.Active;
             var changed = false;
 
-            foreach (var worldType in worldTypes) {
-                var data = new WorldMetaData(worldType);
-                var ws = reg.GetOrCreate(worldType);
+            var worldType = typeof(World);
+            var data = new WorldMetaData(worldType);
+            var ws = reg.GetOrCreate(worldType);
 
-                foreach (var type in componentTypes) {
-                    HandleComponentMeta(data, type);
-                    changed |= RegisterGuid(ConfigKind.Component, worldType, type, ws);
-                }
-
-                foreach (var type in tagTypes) {
-                    HandleTagMeta(data, type);
-                    changed |= RegisterGuid(ConfigKind.Tag, worldType, type, ws);
-                }
-
-                data.EntityTypes.AddRange(entityTypes);
-
-                var worldOpenType = typeof(World<>);
-
-                foreach (var linkType in linkTypes) {
-                    var linkComponentType = worldOpenType.GetNestedType("Link`1").MakeGenericType(worldType, linkType);
-                    HandleComponentMeta(data, linkComponentType);
-                    changed |= RegisterGuid(ConfigKind.Link, worldType, linkType, ws);
-                }
-
-                foreach (var linksType in linksTypes) {
-                    var linksComponentType = worldOpenType.GetNestedType("Links`1").MakeGenericType(worldType, linksType);
-                    HandleComponentMeta(data, linksComponentType);
-                    changed |= RegisterGuid(ConfigKind.Links, worldType, linksType, ws);
-                }
-
-                foreach (var multiType in multiTypes) {
-                    var multiComponentType = worldOpenType.GetNestedType("Multi`1").MakeGenericType(worldType, multiType);
-                    HandleComponentMeta(data, multiComponentType);
-                    changed |= RegisterGuid(ConfigKind.Multi, worldType, multiType, ws);
-                }
-
-                PerWorldMetaData[worldType] = data;
+            foreach (var type in componentTypes) {
+                HandleComponentMeta(data, type);
+                changed |= RegisterGuid(ConfigKind.Component, type, ws);
             }
+
+            foreach (var type in tagTypes) {
+                HandleTagMeta(data, type);
+                changed |= RegisterGuid(ConfigKind.Tag, type, ws);
+            }
+
+            data.EntityTypes.AddRange(entityTypes);
+
+            foreach (var linkType in linkTypes) {
+                var linkComponentType = worldType.GetNestedType("Link`1").MakeGenericType(linkType);
+                HandleComponentMeta(data, linkComponentType);
+                changed |= RegisterGuid(ConfigKind.Link, linkType, ws);
+            }
+
+            foreach (var linksType in linksTypes) {
+                var linksComponentType = worldType.GetNestedType("Links`1").MakeGenericType(linksType);
+                HandleComponentMeta(data, linksComponentType);
+                changed |= RegisterGuid(ConfigKind.Links, linksType, ws);
+            }
+
+            foreach (var multiType in multiTypes) {
+                var multiComponentType = worldType.GetNestedType("Multi`1").MakeGenericType(multiType);
+                HandleComponentMeta(data, multiComponentType);
+                changed |= RegisterGuid(ConfigKind.Multi, multiType, ws);
+            }
+
+            Meta = data;
 
             if (changed) {
                 reg.Save();
@@ -250,7 +231,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             InternalEditorUtility.RepaintAllViews();
         }
 
-        internal static bool RegisterGuid(ConfigKind kind, Type worldType, Type type, StaticEcsTypeGuidRegistry.WorldSettings ws) {
+        internal static bool RegisterGuid(ConfigKind kind, Type type, StaticEcsTypeGuidRegistry.WorldSettings ws) {
             var configOpenType = kind switch {
                 ConfigKind.Component => typeof(IComponentConfig<>),
                 ConfigKind.Tag => typeof(ITagConfig<>),
@@ -263,29 +244,14 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             var configType = configOpenType.MakeGenericType(type);
 
             Guid? guid = null;
-            if (kind is ConfigKind.Link or ConfigKind.Links or ConfigKind.Multi) {
-                try {
-                    var config = configType.GetMethod("Config")?.MakeGenericMethod(worldType).Invoke(Activator.CreateInstance(type), null);
-                    if (config != null) {
-                        var guidField = config.GetType().GetField("Guid", BindingFlags.Public | BindingFlags.Instance);
-                        guid = (Guid?)guidField!.GetValue(config);
-                    }
-                }
-                catch (Exception) {
-                    // ignored
+            try {
+                var config = configType.GetMethod("Config")?.Invoke(Activator.CreateInstance(type), null);
+                if (config != null) {
+                    var guidField = config.GetType().GetField("Guid", BindingFlags.Public | BindingFlags.Instance);
+                    guid = (Guid?)guidField!.GetValue(config);
                 }
             }
-            else {
-                try {
-                    var config = configType.GetMethod("Config")?.Invoke(Activator.CreateInstance(type), null);
-                    if (config != null) {
-                        var guidField = config.GetType().GetField("Guid", BindingFlags.Public | BindingFlags.Instance);
-                        guid = (Guid?)guidField!.GetValue(config);
-                    }
-                }
-                catch (Exception) {
-                    // ignored
-                }
+            catch (Exception) {
             }
 
             return guid.HasValue && ws.SyncEntry(kind, guid.Value, new StaticEcsTypeGuidRegistry.TypeIdentity {
@@ -295,17 +261,10 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             });
         }
 
-        internal static WorldMetaData GetWorldMetaData(Type worldType) {
-            PerWorldMetaData.TryGetValue(worldType, out var data);
-            return data;
-        }
+        internal static WorldMetaData GetWorldMetaData() => Meta;
 
         public static void EnrichByWorld(WorldHandle handle) {
-            var worldType = handle.WorldType;
-            if (!PerWorldMetaData.TryGetValue(worldType, out var data)) {
-                data = new WorldMetaData(worldType);
-                PerWorldMetaData[worldType] = data;
-            }
+            var data = Meta ??= new WorldMetaData(handle.WorldType);
 
             if (data.Enriched) return;
 

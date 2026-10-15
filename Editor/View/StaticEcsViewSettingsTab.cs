@@ -3,8 +3,7 @@ using UnityEditor;
 using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
-    public class StaticEcsViewSettingsTab<TWorld> : IStaticEcsViewTab
-        where TWorld : struct, IWorldType {
+    public class StaticEcsViewSettingsTab : IStaticEcsViewTab {
 
         private readonly EditorWindow _parentWindow;
         private Vector2 _scroll;
@@ -18,8 +17,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         public void Init() {}
         public void Destroy() {}
 
-        public void OnWorldChanged(AbstractWorldData newWorldData) {
-            _worldMeta = MetaData.GetWorldMetaData(typeof(TWorld));
+        public void OnWorldChanged(WorldData newWorldData) {
+            _worldMeta = MetaData.GetWorldMetaData();
         }
 
         public void Draw() {
@@ -59,7 +58,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUILayout.LabelField("Component Foldouts", EditorStyles.boldLabel);
 
             var config = StaticEcsViewConfig.Active;
-            var worldSettings = config.GetOrCreate(typeof(TWorld).FullName);
+            var worldSettings = config.GetOrCreate(typeof(World).FullName);
             var settings = worldSettings.entities;
 
             EditorGUILayout.BeginHorizontal();
@@ -135,7 +134,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             if (GUILayout.Button("Reset config to defaults", Ui.ButtonStyleTheme, Ui.WidthLine(200))) {
                 var config = StaticEcsViewConfig.Active;
-                var worldKey = typeof(TWorld).FullName;
+                var worldKey = typeof(World).FullName;
                 config.worlds.RemoveAll(w => w.worldTypeFullName == worldKey);
                 config.GetOrCreate(worldKey);
                 Drawer.initializedFoldouts.Clear();

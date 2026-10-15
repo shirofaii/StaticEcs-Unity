@@ -12,7 +12,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
     public static partial class Drawer {
         private static readonly List<IComponentOrTagProvider> _ComponentsAndTagsCache = new();
 
-        public static void DrawEntity<TWorld, TEntityProvider>(TEntityProvider provider, DrawMode mode) where TEntityProvider : StaticEcsEntityProvider<TWorld> where TWorld : struct, IWorldType {
+        public static void DrawEntity(StaticEcsEntityProvider provider, DrawMode mode) {
             using (Ui.EnabledScope) {
                 if (mode != DrawMode.Inspector) {
                     provider.Scroll = EditorGUILayout.BeginScrollView(provider.Scroll);
@@ -27,7 +27,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private static void DrawHeader<TWorld>(StaticEcsEntityProvider<TWorld> provider, DrawMode mode) where TWorld : struct, IWorldType {
+        private static void DrawHeader(StaticEcsEntityProvider provider, DrawMode mode) {
             EditorGUILayout.BeginHorizontal();
 
             DrawEntityLabel();
@@ -44,7 +44,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             DrawHeaderSeparator();
         }
 
-        private static void DrawComponentsAndTags<TWorld>(StaticEcsEntityProvider<TWorld> provider, DrawMode mode) where TWorld : struct, IWorldType {
+        private static void DrawComponentsAndTags(StaticEcsEntityProvider provider, DrawMode mode) {
             provider.GetComponentsAndTags(_ComponentsAndTagsCache);
             DrawComponentsAndTags(_ComponentsAndTagsCache, provider, mode);
             _ComponentsAndTagsCache.Clear();
@@ -55,10 +55,10 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             DrawSectionSeparator(EditorGUIUtility.singleLineHeight);
         }
 
-        private static void DrawEntityType<TWorld>(StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
-            var worldMeta = MetaData.GetWorldMetaData(typeof(TWorld));
+        private static void DrawEntityType(StaticEcsEntityProvider provider) {
+            var worldMeta = MetaData.GetWorldMetaData();
             if (provider.EntityIsActual()) {
-                var entity = provider.EntityGid.Unpack<TWorld>();
+                var entity = provider.EntityGid.Unpack();
                 var typeName = worldMeta.GetEntityTypeName(entity.EntityType);
                 GUILayout.Label(typeName, Ui.LabelStyleThemeBold, GUILayout.Height(EditorGUIUtility.singleLineHeight), GUILayout.ExpandWidth(false));
             } else if (worldMeta != null && worldMeta.EntityTypes.Count > 0) {
@@ -78,7 +78,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private static void DrawEntityInfo<TWorld>(StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
+        private static void DrawEntityInfo(StaticEcsEntityProvider provider) {
             if (provider.EntityIsActual()) {
                 var gid = Ui.IntToStringD6((int) provider.EntityGid.Id).simple;
                 var content = new GUIContent($"GID {gid}");
@@ -92,13 +92,13 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private static void DrawEntityDisabled<TWorld>(StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
-            if (provider.EntityIsActual() && provider.EntityGid.Unpack<TWorld>().IsDisabled) {
+        private static void DrawEntityDisabled(StaticEcsEntityProvider provider) {
+            if (provider.EntityIsActual() && provider.EntityGid.Unpack().IsDisabled) {
                 GUILayout.Label("[Disabled]", Ui.LabelStyleYellowCenter, GUILayout.Height(EditorGUIUtility.singleLineHeight), GUILayout.ExpandWidth(false));
             }
         }
 
-        private static void DrawSpawnButton<TWorld>(StaticEcsEntityProvider<TWorld> provider, DrawMode mode) where TWorld : struct, IWorldType {
+        private static void DrawSpawnButton(StaticEcsEntityProvider provider, DrawMode mode) {
             if (!provider.EntityIsActual() && mode != DrawMode.Viewer && Application.isPlaying) {
                 using (Ui.EnabledScope) {
                     if (GUILayout.Button("Spawn", Ui.ButtonStyleYellow, GUILayout.Width(60), GUILayout.Height(EditorGUIUtility.singleLineHeight))) {
@@ -109,29 +109,29 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private static void DrawActionMenu<TWorld>(StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
+        private static void DrawActionMenu(StaticEcsEntityProvider provider) {
             if (Ui.MenuButton) {
                 var menu = new GenericMenu();
                 if (provider.EntityIsActual()) {
                     #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-                    var entity = provider.EntityGid.Unpack<TWorld>();
+                    var entity = provider.EntityGid.Unpack();
                     if (entity.IsEnabled) {
                         menu.AddItem(new GUIContent("Disable"), false, () => {
-                            EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+                            EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                                 Type = DebugCommandType.DisableEntity,
                                 EntityGid = entity.GID,
                             });
                         });
                     } else {
                         menu.AddItem(new GUIContent("Enable"), false, () => {
-                            EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+                            EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                                 Type = DebugCommandType.EnableEntity,
                                 EntityGid = entity.GID,
                             });
                         });
                     }
                     menu.AddItem(new GUIContent("Destroy"), false, () => {
-                        EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+                        EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                             Type = DebugCommandType.DestroyEntity,
                             EntityGid = entity.GID,
                         });

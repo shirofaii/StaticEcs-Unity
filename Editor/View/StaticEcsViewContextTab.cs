@@ -5,10 +5,7 @@ using UnityEditor;
 using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
-    public class StaticEcsViewContextTab<TWorld, TEntityProvider> : IStaticEcsViewTab
-        where TWorld : struct, IWorldType
-        where TEntityProvider : StaticEcsEntityProvider<TWorld> {
-        private readonly Dictionary<Type, ContextDrawer> _drawersByWorldTypeType = new();
+    public class StaticEcsViewContextTab : IStaticEcsViewTab {
         private ContextDrawer _currentDrawer;
 
         public string Name() => "Resources";
@@ -21,24 +18,20 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         public void Destroy() { }
 
-        public void OnWorldChanged(AbstractWorldData newWorldData) {
-            if (!_drawersByWorldTypeType.ContainsKey(newWorldData.Handle.WorldType)) {
-                _drawersByWorldTypeType[newWorldData.Handle.WorldType] = new ContextDrawer(newWorldData);
-            }
-
-            _currentDrawer = _drawersByWorldTypeType[newWorldData.Handle.WorldType];
+        public void OnWorldChanged(WorldData newWorldData) {
+            _currentDrawer ??= new ContextDrawer(newWorldData);
         }
     }
 
     public class ContextDrawer {
         private readonly WorldHandle _handle;
-        private readonly AbstractWorldData _worldData;
+        private readonly WorldData _worldData;
 
         private readonly List<Action> _pendingRemovals = new();
 
         private Vector2 verticalScrollStatsPosition = Vector2.zero;
 
-        public ContextDrawer(AbstractWorldData worldData) {
+        public ContextDrawer(WorldData worldData) {
             _worldData = worldData;
             _handle = _worldData.Handle;
         }

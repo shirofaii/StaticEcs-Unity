@@ -17,7 +17,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private static readonly HashSet<long> _brokenShowData = new();
         private static readonly Dictionary<string, int> _groupMatchCounts = new();
 
-        private static void DrawComponentsAndTags<TWorld>(List<IComponentOrTagProvider> componentsAndTags, StaticEcsEntityProvider<TWorld> provider, DrawMode mode) where TWorld : struct, IWorldType {
+        private static void DrawComponentsAndTags(List<IComponentOrTagProvider> componentsAndTags, StaticEcsEntityProvider provider, DrawMode mode) {
             if (componentsAndTags.Count == 0 && !provider.EntityIsActual()) {
                 DrawFirstComponentButton(componentsAndTags, provider);
                 return;
@@ -32,7 +32,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             DrawComponentsAndTagsInternal(componentsAndTags, provider, mode, filter);
         }
 
-        private static void DrawFirstComponentButton<TWorld>(List<IComponentOrTagProvider> providers, StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
+        private static void DrawFirstComponentButton(List<IComponentOrTagProvider> providers, StaticEcsEntityProvider provider) {
             EditorGUILayout.Space(4);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.Space(8);
@@ -52,8 +52,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUILayout.EndVertical();
         }
 
-        private static void DrawSearchField<TWorld>(StaticEcsEntityProvider<TWorld> provider, out string filter)
-            where TWorld : struct, IWorldType {
+        private static void DrawSearchField(StaticEcsEntityProvider provider, out string filter) {
 #if UNITY_6000_4_OR_NEWER
             var filterKey = provider.GetEntityId();
 #else
@@ -78,9 +77,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private static void DrawSortButtons<TWorld>(StaticEcsEntityProvider<TWorld> provider)
-            where TWorld : struct, IWorldType {
-            var worldSettings = StaticEcsViewConfig.Active.GetOrCreate(typeof(TWorld).FullName);
+        private static void DrawSortButtons(StaticEcsEntityProvider provider) {
+            var worldSettings = StaticEcsViewConfig.Active.GetOrCreate(typeof(World).FullName);
             using (Ui.EnabledScopeVal(!provider.EntityIsActual() && GUI.enabled)) {
                 if (GUILayout.Button(new GUIContent("⇅", "Sort components now"), EditorStyles.miniButton, GUILayout.Width(26))) {
                     SortProvidersInPlace(provider);
@@ -97,8 +95,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private static void DrawAddComponentButton<TWorld>(List<IComponentOrTagProvider> componentsAndTags, StaticEcsEntityProvider<TWorld> provider)
-            where TWorld : struct, IWorldType {
+        private static void DrawAddComponentButton(List<IComponentOrTagProvider> componentsAndTags, StaticEcsEntityProvider provider) {
             using (Ui.EnabledScopeVal(GUI.enabled)) {
                 if (EditorGUILayout.DropdownButton(new GUIContent("＋ Add"), FocusType.Keyboard, EditorStyles.miniPullDown, GUILayout.Width(80))) {
                     DrawProvidersMenu(componentsAndTags, provider);
@@ -106,10 +103,9 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
         
-        private static void DrawComponentsAndTagsInternal<TWorld>(List<IComponentOrTagProvider> componentsAndTags, StaticEcsEntityProvider<TWorld> provider, DrawMode mode, string filter)
-            where TWorld : struct, IWorldType {
+        private static void DrawComponentsAndTagsInternal(List<IComponentOrTagProvider> componentsAndTags, StaticEcsEntityProvider provider, DrawMode mode, string filter) {
 
-            var sorted = StaticEcsViewConfig.Active.GetOrCreate(typeof(TWorld).FullName).entities.sortComponents;
+            var sorted = StaticEcsViewConfig.Active.GetOrCreate(typeof(World).FullName).entities.sortComponents;
             var order = BuildProviderOrder(componentsAndTags, sorted);
             MissingReferenceMigration.FillMissing(provider, _missingPool);
 
@@ -160,7 +156,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                                 continue;
                             }
                         }
-                        currentGroupOpen = BeginGroupSection(provider, typeof(TWorld), groupName, groupColor, groupHasColor, hasFilter);
+                        currentGroupOpen = BeginGroupSection(provider, groupName, groupColor, groupHasColor, hasFilter);
                         currentGroupVerticalOpen = currentGroupOpen;
                     }
                 }
@@ -177,7 +173,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EndGroupSection(ref currentGroup, ref currentGroupVerticalOpen);
         }
 
-        private static int GroupFoldoutKey<TWorld>(StaticEcsEntityProvider<TWorld> provider, string groupName) where TWorld : struct, IWorldType {
+        private static int GroupFoldoutKey(StaticEcsEntityProvider provider, string groupName) {
 #if UNITY_6000_4_OR_NEWER
             return HashCode.Combine(provider.GetEntityId(), "ECS_GROUP", groupName);
 #else
@@ -185,18 +181,17 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 #endif
         }
 
-        private static bool BeginGroupSection<TWorld>(StaticEcsEntityProvider<TWorld> provider, Type worldType, string groupName, Color groupColor, bool groupHasColor, bool forceOpen)
-            where TWorld : struct, IWorldType {
+        private static bool BeginGroupSection(StaticEcsEntityProvider provider, string groupName, Color groupColor, bool groupHasColor, bool forceOpen) {
             var key = GroupFoldoutKey(provider, groupName);
             if (initializedFoldouts.Add(key)) {
-                ApplyGroupFoldoutConfig(key, groupName, worldType);
+                ApplyGroupFoldoutConfig(key, groupName);
             }
 
             var barColor = groupHasColor ? groupColor : new Color(0.5f, 0.5f, 0.5f, 1f);
             bool show = DrawGroupFoldoutHeader(key, groupName, barColor, groupHasColor);
 
             if (!forceOpen) {
-                SyncGroupFoldoutToConfig(key, groupName, worldType);
+                SyncGroupFoldoutToConfig(key, groupName);
             }
 
             if (forceOpen) show = true;
@@ -258,15 +253,15 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             currentGroup = null;
         }
 
-        private static void ApplyGroupFoldoutConfig(int foldoutKey, string groupName, Type worldType) {
-            var ws = StaticEcsViewConfig.Active.GetOrCreate(worldType.FullName);
+        private static void ApplyGroupFoldoutConfig(int foldoutKey, string groupName) {
+            var ws = StaticEcsViewConfig.Active.GetOrCreate(typeof(World).FullName);
             var inOverrides = ws.entities.groupOverrides.Contains(groupName);
             var open = ws.entities.defaultGroupExpanded ^ inOverrides;
             if (open) openHideFlags.Add(foldoutKey);
         }
 
-        private static void SyncGroupFoldoutToConfig(int foldoutKey, string groupName, Type worldType) {
-            var ws = StaticEcsViewConfig.Active.GetOrCreate(worldType.FullName);
+        private static void SyncGroupFoldoutToConfig(int foldoutKey, string groupName) {
+            var ws = StaticEcsViewConfig.Active.GetOrCreate(typeof(World).FullName);
             var nowOpen = openHideFlags.Contains(foldoutKey);
             var defaultOpen = ws.entities.defaultGroupExpanded;
             var shouldBeInOverrides = nowOpen != defaultOpen;
@@ -277,7 +272,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             StaticEcsViewConfig.Active.MarkDirty();
         }
 
-        private static void DrawTag<TWorld>(IComponentOrTagProvider tag, StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
+        private static void DrawTag(IComponentOrTagProvider tag, StaticEcsEntityProvider provider) {
             var type = tag.ComponentType;
 
             var rect = GUILayoutUtility.GetRect(0, 18);
@@ -311,7 +306,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private static void DrawComponent<TWorld>(IComponentOrTagProvider component, StaticEcsEntityProvider<TWorld> provider, DrawMode mode) where TWorld : struct, IWorldType {
+        private static void DrawComponent(IComponentOrTagProvider component, StaticEcsEntityProvider provider, DrawMode mode) {
             var type = component.ComponentType;
 
             var typeName = type.EditorTypeName();
@@ -322,7 +317,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             var foldoutKey = HashCode.Combine(provider, type.FullName);
             if (initializedFoldouts.Add(foldoutKey)) {
-                ApplyFoldoutConfig(foldoutKey, type, typeof(TWorld));
+                ApplyFoldoutConfig(foldoutKey, type);
             }
             
             var rect = GUILayoutUtility.GetRect(0, 18);
@@ -438,7 +433,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
 
         // Unity's serialized property system cannot introspect value-type structs
-        // nested in a generic outer class (World<TWorld>.Link<TLinkType> / .Links<...> / .Multi<...>).
+        // nested in a generic outer class (World.Link<TLinkType> / .Links<...> / .Multi<...>).
         // PropertyField on such fields logs "seems to be referencing invalid or out of date data".
         // Resolve the actual boxed value via reflection and render directly.
         private static bool TryDrawWorldWrapperInline(SerializedProperty property) {
@@ -471,20 +466,20 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 var gid = SerializedPropertyValueResolver.Resolve<EntityGID>(property);
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PrefixLabel(label);
-                var (text, actual, worldType) = ResolveEntityGIDDisplay(gid);
+                var (text, actual) = ResolveEntityGIDDisplay(gid);
                 EditorGUILayout.SelectableLabel(text, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
                 if (actual) {
-                    DrawInspectEntityButton(gid, worldType);
+                    DrawInspectEntityButton(gid);
                 }
                 EditorGUILayout.EndHorizontal();
             } else {
                 var gid = SerializedPropertyValueResolver.Resolve<EntityGIDCompact>(property);
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PrefixLabel(label);
-                var (text, actual, worldType) = ResolveEntityGIDDisplay(gid);
+                var (text, actual) = ResolveEntityGIDDisplay(gid);
                 EditorGUILayout.SelectableLabel(text, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
                 if (actual) {
-                    DrawInspectEntityButton(gid, worldType);
+                    DrawInspectEntityButton(gid);
                 }
                 EditorGUILayout.EndHorizontal();
             }
@@ -550,8 +545,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             return new ComponentProvider { value = component };
         }
 
-        private static bool TryDrawSpecialComponent<TWorld>(IComponent component, Type type, IComponentOrTagProvider prov, StaticEcsEntityProvider<TWorld> entityProvider)
-            where TWorld : struct, IWorldType {
+        private static bool TryDrawSpecialComponent(IComponent component, Type type, IComponentOrTagProvider prov, StaticEcsEntityProvider entityProvider) {
             if (!IsWorldWrapperType(type, out var baseName)) return false;
 
             var actual = entityProvider.EntityIsActual();
@@ -592,8 +586,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             return target.gameObject.scene.IsValid();
         }
 
-        private static TProvider FindProvider<TWorld, TProvider>(StaticEcsEntityProvider<TWorld> entityProvider, Type componentType)
-            where TWorld : struct, IWorldType
+        private static TProvider FindProvider<TProvider>(StaticEcsEntityProvider entityProvider, Type componentType)
             where TProvider : class, IComponentOrTagProvider {
             var providers = entityProvider.SerializedProviders;
             if (providers == null) return null;
@@ -606,8 +599,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             return null;
         }
 
-        private static void DrawAuthoringLinkTarget<TWorld>(Type type, IComponentOrTagProvider prov, StaticEcsEntityProvider<TWorld> entityProvider) where TWorld : struct, IWorldType {
-            var lp = prov as LinkProvider ?? FindProvider<TWorld, LinkProvider>(entityProvider, type);
+        private static void DrawAuthoringLinkTarget(Type type, IComponentOrTagProvider prov, StaticEcsEntityProvider entityProvider) {
+            var lp = prov as LinkProvider ?? FindProvider<LinkProvider>(entityProvider, type);
             if (lp == null) return;
 
             EditorGUILayout.BeginHorizontal();
@@ -626,8 +619,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUILayout.EndHorizontal();
         }
 
-        private static void DrawAuthoringLinksTargets<TWorld>(Type type, IComponentOrTagProvider prov, StaticEcsEntityProvider<TWorld> entityProvider) where TWorld : struct, IWorldType {
-            var lsp = prov as LinksProvider ?? FindProvider<TWorld, LinksProvider>(entityProvider, type);
+        private static void DrawAuthoringLinksTargets(Type type, IComponentOrTagProvider prov, StaticEcsEntityProvider entityProvider) {
+            var lsp = prov as LinksProvider ?? FindProvider<LinksProvider>(entityProvider, type);
             if (lsp == null) return;
             lsp.targets ??= new();
 
@@ -668,10 +661,10 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PrefixLabel("Value");
-            var (text, actual, worldType) = ResolveEntityGIDDisplay(gid);
+            var (text, actual) = ResolveEntityGIDDisplay(gid);
             EditorGUILayout.SelectableLabel(text, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
             if (actual) {
-                DrawInspectEntityButton(gid, worldType);
+                DrawInspectEntityButton(gid);
             }
             EditorGUILayout.EndHorizontal();
         }
@@ -696,10 +689,10 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PrefixLabel($"[{i}]");
-                var (text, actual, worldType) = ResolveEntityGIDDisplay(gid);
+                var (text, actual) = ResolveEntityGIDDisplay(gid);
                 EditorGUILayout.SelectableLabel(text, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
                 if (actual) {
-                    DrawInspectEntityButton(gid, worldType);
+                    DrawInspectEntityButton(gid);
                 }
                 EditorGUILayout.EndHorizontal();
             }
@@ -759,39 +752,25 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUI.indentLevel--;
         }
 
-        internal static (string text, bool actual, Type worldType) ResolveEntityGIDDisplay(EntityGIDCompact gid) {
-            if (gid.Raw == 0) return ("Empty", false, null);
+        internal static (string text, bool actual) ResolveEntityGIDDisplay(EntityGIDCompact gid) {
+            if (gid.Raw == 0) return ("Empty", false);
             return ResolveEntityGIDDisplay((EntityGID) gid);
         }
 
-        internal static (string text, bool actual, Type worldType) ResolveEntityGIDDisplay(EntityGID gid) {
-            if (gid.Raw == 0) return ("Empty", false, null);
+        internal static (string text, bool actual) ResolveEntityGIDDisplay(EntityGID gid) {
+            if (gid.Raw == 0) return ("Empty", false);
 
-            Type worldType = null;
-            var actual = false;
-            foreach (var kvp in StaticEcsDebugData.Worlds) {
-                if (kvp.Value.Handle.GIDStatus(gid) == GIDStatus.Active) {
-                    actual = true;
-                    worldType = kvp.Key;
-                    break;
-                }
+            var worldData = StaticEcsDebugData.Current;
+            if (worldData != null && worldData.Handle.GIDStatus(gid) == GIDStatus.Active) {
+                return (worldData.WindowNameFunction?.Invoke(gid) ?? gid.ToString(), true);
             }
 
-            string text;
-            if (actual && worldType != null) {
-                var worldData = StaticEcsDebugData.Worlds[worldType];
-                text = worldData.WindowNameFunction?.Invoke(gid) ?? gid.ToString();
-            } else {
-                text = gid.ToString();
-                if (!actual) text += " (Not actual)";
-            }
-
-            return (text, actual, worldType);
+            return (gid + " (Not actual)", false);
         }
 
-        internal static bool DrawInspectEntityButton(EntityGID gid, Type worldType) {
-            if (!Application.isPlaying || worldType == null) return false;
-            if (!EntityInspectorRegistry.ShowEntityHandlers.TryGetValue(worldType, out var handler)) return false;
+        internal static bool DrawInspectEntityButton(EntityGID gid) {
+            var handler = EntityInspectorRegistry.ShowEntity;
+            if (!Application.isPlaying || handler == null) return false;
             using (Ui.EnabledScope) {
                 if (GUILayout.Button("\u2299", EditorStyles.miniButton, GUILayout.Width(20))) {
                     handler(gid);
@@ -802,8 +781,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             return false;
         }
 
-        private static void DrawProvidersMenu<TWorld>(List<IComponentOrTagProvider> actualProviders, StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
-            var worldMeta = MetaData.GetWorldMetaData(typeof(TWorld));
+        private static void DrawProvidersMenu(List<IComponentOrTagProvider> actualProviders, StaticEcsEntityProvider provider) {
+            var worldMeta = MetaData.GetWorldMetaData();
             var items = new List<SearchableDropdown.Item>(worldMeta.Components.Count + worldMeta.Tags.Count);
 
             foreach (var component in worldMeta.Components) {
@@ -881,13 +860,13 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             return $"{GuidTypeRegistry.PrettyMissingClassName(m.className)} (asm: {m.assemblyName})";
         }
 
-        private static void DrawBrokenProviderSlot<TWorld>(
+        private static void DrawBrokenProviderSlot(
             List<IComponentOrTagProvider> componentsOrTags,
             int index,
             IComponentOrTagProvider componentOrTag,
-            StaticEcsEntityProvider<TWorld> entityProvider,
+            StaticEcsEntityProvider entityProvider,
             List<ManagedReferenceMissingType> missingPool
-        ) where TWorld : struct, IWorldType {
+        ) {
             if (PrefabUtility.IsPartOfPrefabAsset(entityProvider)) {
                 DrawPrefabAssetOpenPrompt(entityProvider, componentOrTag == null ? "provider" : componentOrTag.GetType().Name, index);
                 return;
@@ -1023,13 +1002,13 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         private static GUIStyle _brokenLabelStyle;
 
-        private static void ShowBrokenReplaceMenu<TWorld>(
+        private static void ShowBrokenReplaceMenu(
             List<IComponentOrTagProvider> providers, int index, IComponentOrTagProvider brokenProv,
-            StaticEcsEntityProvider<TWorld> provider,
+            StaticEcsEntityProvider provider,
             ManagedReferenceMissingType missing,
             ConfigKind? brokenKind
-        ) where TWorld : struct, IWorldType {
-            var worldMeta = MetaData.GetWorldMetaData(typeof(TWorld));
+        ) {
+            var worldMeta = MetaData.GetWorldMetaData();
             var items = new List<SearchableDropdown.Item>(worldMeta.Components.Count + worldMeta.Tags.Count);
 
             bool allowComponents, allowTags, allowMulti, allowLink, allowLinks;
@@ -1112,9 +1091,9 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             });
         }
 
-        private static void ApplyFoldoutConfig(int foldoutKey, Type componentType, Type worldType) {
+        private static void ApplyFoldoutConfig(int foldoutKey, Type componentType) {
             var config = StaticEcsViewConfig.Active;
-            var worldSettings = config.GetOrCreate(worldType.FullName);
+            var worldSettings = config.GetOrCreate(typeof(World).FullName);
             switch (worldSettings.entities.foldoutMode) {
                 case ComponentFoldoutMode.ExpandAll:
                     openHideFlags.Add(foldoutKey);
@@ -1130,7 +1109,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private static void SortProvidersInPlace<TWorld>(StaticEcsEntityProvider<TWorld> provider) where TWorld : struct, IWorldType {
+        private static void SortProvidersInPlace(StaticEcsEntityProvider provider) {
             var providers = provider.SerializedProviders;
             if (providers.Count < 2) return;
             var order = BuildProviderOrder(providers, true);

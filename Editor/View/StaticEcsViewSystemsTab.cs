@@ -5,11 +5,10 @@ using UnityEditor;
 using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
-    public class StaticEcsViewSystemsTab<TWorld> : IStaticEcsViewTab
-        where TWorld : struct, IWorldType {
+    public class StaticEcsViewSystemsTab : IStaticEcsViewTab {
         private static Dictionary<int, string> _formattedTime = new();
 
-        private AbstractWorldData _currentWorldData;
+        private WorldData _currentWorldData;
         private Vector2 _verticalScroll = Vector2.zero;
 
         public string Name() => "Systems";
@@ -39,7 +38,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         public void Destroy() { }
 
-        public void OnWorldChanged(AbstractWorldData newWorldData) {
+        public void OnWorldChanged(WorldData newWorldData) {
             _currentWorldData = newWorldData;
         }
 

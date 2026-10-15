@@ -26,7 +26,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
         ComponentOrTagKind Kind { get; }
         Type ComponentType { get; }
 
-        void Apply<TWorld>(World<TWorld>.Entity entity, bool deferred = false) where TWorld : struct, IWorldType;
+        void Apply(World.Entity entity, bool deferred = false);
     }
 
     [Serializable]
@@ -37,12 +37,12 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public ComponentOrTagKind Kind => ComponentOrTagKind.Component;
         public Type ComponentType => value?.GetType();
 
-        public void Apply<TWorld>(World<TWorld>.Entity entity, bool deferred = false) where TWorld : struct, IWorldType {
+        public void Apply(World.Entity entity, bool deferred = false) {
             if (value == null) return;
             #if UNITY_EDITOR
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            if (deferred && Application.isPlaying && EcsDebug<TWorld>.DebugViewSystem != null) {
-                EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+            if (deferred && Application.isPlaying && EcsDebug.DebugViewSystem != null) {
+                EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                     Type = DebugCommandType.SetComponent,
                     EntityGid = entity.GID,
                     TargetType = value.GetType(),
@@ -52,7 +52,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
             #endif
             #endif
-            ref var world = ref World<TWorld>.Data.Handle;
+            ref var world = ref World.Data.Handle;
             if (world.TryGetComponentsHandle(value.GetType(), out var handle)) {
                 handle.SetRaw(entity.ID, value);
             }
@@ -67,12 +67,12 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public ComponentOrTagKind Kind => ComponentOrTagKind.Tag;
         public Type ComponentType => value?.GetType();
 
-        public void Apply<TWorld>(World<TWorld>.Entity entity, bool deferred = false) where TWorld : struct, IWorldType {
+        public void Apply(World.Entity entity, bool deferred = false) {
             if (value == null) return;
             #if UNITY_EDITOR
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            if (deferred && Application.isPlaying && EcsDebug<TWorld>.DebugViewSystem != null) {
-                EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+            if (deferred && Application.isPlaying && EcsDebug.DebugViewSystem != null) {
+                EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                     Type = DebugCommandType.SetTag,
                     EntityGid = entity.GID,
                     TargetType = value.GetType(),
@@ -81,7 +81,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
             #endif
             #endif
-            ref var world = ref World<TWorld>.Data.Handle;
+            ref var world = ref World.Data.Handle;
             if (world.TryGetComponentsHandle(value.GetType(), out var handle)) {
                 handle.Set(entity.ID);
             }
@@ -98,13 +98,13 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public ComponentOrTagKind Kind => ComponentOrTagKind.Link;
         public Type ComponentType => value?.GetType();
 
-        public void Apply<TWorld>(World<TWorld>.Entity entity, bool deferred = false) where TWorld : struct, IWorldType {
+        public void Apply(World.Entity entity, bool deferred = false) {
             if (value == null) return;
             if (target != null) return;
             #if UNITY_EDITOR
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            if (deferred && Application.isPlaying && EcsDebug<TWorld>.DebugViewSystem != null) {
-                EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+            if (deferred && Application.isPlaying && EcsDebug.DebugViewSystem != null) {
+                EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                     Type = DebugCommandType.SetComponent,
                     EntityGid = entity.GID,
                     TargetType = value.GetType(),
@@ -114,7 +114,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
             #endif
             #endif
-            ref var world = ref World<TWorld>.Data.Handle;
+            ref var world = ref World.Data.Handle;
             if (world.TryGetComponentsHandle(value.GetType(), out var handle)) {
                 handle.SetRaw(entity.ID, (IComponentOrTag) value);
             }
@@ -131,13 +131,13 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public ComponentOrTagKind Kind => ComponentOrTagKind.Links;
         public Type ComponentType => value?.GetType();
 
-        public void Apply<TWorld>(World<TWorld>.Entity entity, bool deferred = false) where TWorld : struct, IWorldType {
+        public void Apply(World.Entity entity, bool deferred = false) {
             if (value == null) return;
             if (targets != null && targets.Count > 0) return;
             #if UNITY_EDITOR
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            if (deferred && Application.isPlaying && EcsDebug<TWorld>.DebugViewSystem != null) {
-                EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+            if (deferred && Application.isPlaying && EcsDebug.DebugViewSystem != null) {
+                EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                     Type = DebugCommandType.SetComponent,
                     EntityGid = entity.GID,
                     TargetType = value.GetType(),
@@ -147,7 +147,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
             #endif
             #endif
-            ref var world = ref World<TWorld>.Data.Handle;
+            ref var world = ref World.Data.Handle;
             if (world.TryGetComponentsHandle(value.GetType(), out var handle)) {
                 handle.SetRaw(entity.ID, (IComponentOrTag) value);
             }
@@ -162,12 +162,12 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public ComponentOrTagKind Kind => ComponentOrTagKind.Multi;
         public Type ComponentType => value?.GetType();
 
-        public void Apply<TWorld>(World<TWorld>.Entity entity, bool deferred = false) where TWorld : struct, IWorldType {
+        public void Apply(World.Entity entity, bool deferred = false) {
             if (value == null) return;
             #if UNITY_EDITOR
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            if (deferred && Application.isPlaying && EcsDebug<TWorld>.DebugViewSystem != null) {
-                EcsDebug<TWorld>.DebugViewSystem.EnqueueCommand(new DebugCommand {
+            if (deferred && Application.isPlaying && EcsDebug.DebugViewSystem != null) {
+                EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
                     Type = DebugCommandType.SetComponent,
                     EntityGid = entity.GID,
                     TargetType = value.GetType(),
@@ -177,7 +177,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
             #endif
             #endif
-            ref var world = ref World<TWorld>.Data.Handle;
+            ref var world = ref World.Data.Handle;
             if (world.TryGetComponentsHandle(value.GetType(), out var handle)) {
                 handle.SetRaw(entity.ID, value);
             }

@@ -9,13 +9,12 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUI.BeginProperty(position, label, property);
 
             var gid = SerializedPropertyValueResolver.Resolve<EntityGID>(property);
-            var (text, actual, worldType) = Drawer.ResolveEntityGIDDisplay(gid);
+            var (text, actual) = Drawer.ResolveEntityGIDDisplay(gid);
 
             var labelRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth, position.height);
             EditorGUI.PrefixLabel(labelRect, label);
 
-            var hasButton = Application.isPlaying && actual && worldType != null
-                            && EntityInspectorRegistry.ShowEntityHandlers.ContainsKey(worldType);
+            var hasButton = Application.isPlaying && actual && EntityInspectorRegistry.ShowEntity != null;
             var valueRect = new Rect(position.x + EditorGUIUtility.labelWidth, position.y,
                 position.width - EditorGUIUtility.labelWidth - (hasButton ? 24 : 0), position.height);
 
@@ -26,7 +25,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 
                 using (Ui.EnabledScope) {
                     if (GUI.Button(buttonRect, "⊙", EditorStyles.miniButton)) {
-                        EntityInspectorRegistry.ShowEntityHandlers[worldType](gid);
+                        EntityInspectorRegistry.ShowEntity(gid);
                     }
                 }
             }
@@ -41,13 +40,12 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUI.BeginProperty(position, label, property);
 
             var gid = SerializedPropertyValueResolver.Resolve<EntityGIDCompact>(property);
-            var (text, actual, worldType) = Drawer.ResolveEntityGIDDisplay(gid);
+            var (text, actual) = Drawer.ResolveEntityGIDDisplay(gid);
 
             var labelRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth, position.height);
             EditorGUI.PrefixLabel(labelRect, label);
 
-            var hasButton = Application.isPlaying && actual && worldType != null
-                            && EntityInspectorRegistry.ShowEntityHandlers.ContainsKey(worldType);
+            var hasButton = Application.isPlaying && actual && EntityInspectorRegistry.ShowEntity != null;
             var valueRect = new Rect(position.x + EditorGUIUtility.labelWidth, position.y,
                 position.width - EditorGUIUtility.labelWidth - (hasButton ? 24 : 0), position.height);
 
@@ -58,7 +56,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
                 using (Ui.EnabledScope) {
                     if (GUI.Button(buttonRect, "⊙", EditorStyles.miniButton)) {
-                        EntityInspectorRegistry.ShowEntityHandlers[worldType](gid);
+                        EntityInspectorRegistry.ShowEntity(gid);
                     }
                 }
             }

@@ -6,11 +6,8 @@ using UnityEditor;
 using static UnityEditor.EditorGUILayout;
 
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
-    public class StaticEcsViewStatsTab<TWorld> : IStaticEcsViewTab
-        where TWorld : struct, IWorldType {
-
-        private readonly Dictionary<Type, StatsDrawer<TWorld>> _drawersByWorldTypeType = new();
-        private StatsDrawer<TWorld> _currentDrawer;
+    public class StaticEcsViewStatsTab : IStaticEcsViewTab {
+        private StatsDrawer _currentDrawer;
         private IStaticEcsViewNavigation _navigation;
 
         private StatsSettings _savedSettings;
@@ -29,14 +26,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         public void Destroy() { }
 
-        public void OnWorldChanged(AbstractWorldData newWorldData) {
-            if (!_drawersByWorldTypeType.ContainsKey(newWorldData.Handle.WorldType)) {
-                var drawer = new StatsDrawer<TWorld>(newWorldData, _navigation);
-                if (_savedSettings != null) drawer.LoadFromConfig(_savedSettings);
-                _drawersByWorldTypeType[newWorldData.Handle.WorldType] = drawer;
+        public void OnWorldChanged(WorldData newWorldData) {
+            if (_currentDrawer == null) {
+                _currentDrawer = new StatsDrawer(newWorldData, _navigation);
+                if (_savedSettings != null) _currentDrawer.LoadFromConfig(_savedSettings);
             }
-
-            _currentDrawer = _drawersByWorldTypeType[newWorldData.Handle.WorldType];
         }
 
         public void SaveState(WorldViewSettings settings) {
@@ -49,7 +43,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
     }
 
-    public class StatsDrawer<TWorld> where TWorld : struct, IWorldType {
+    public class StatsDrawer {
         private const char SegmentNull = '\u00B7';    // · — not allocated
         private const char SegmentEmpty = '\u25A1';   // □ — allocated, empty
         private const char SegmentBlock1 = '\u2591';  // ░
@@ -68,7 +62,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private readonly List<EditorEntityTypeMeta> registeredEntityTypes = new();
 
         private readonly WorldHandle _handle;
-        private readonly AbstractWorldData _worldData;
+        private readonly WorldData _worldData;
         private readonly WorldMetaData _worldMeta;
         private readonly IStaticEcsViewNavigation _navigation;
 
@@ -143,12 +137,12 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        public StatsDrawer(AbstractWorldData worldData, IStaticEcsViewNavigation navigation) {
+        public StatsDrawer(WorldData worldData, IStaticEcsViewNavigation navigation) {
             _worldData = worldData;
             _handle = _worldData.Handle;
             _navigation = navigation;
 
-            _worldMeta = MetaData.GetWorldMetaData(typeof(TWorld));
+            _worldMeta = MetaData.GetWorldMetaData();
 
             componentHandles = new ComponentsHandle?[_worldMeta.Components.Count];
             for (var i = 0; i < _worldMeta.Components.Count; i++) {
@@ -238,7 +232,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
 
         private int GetWorldSegmentsCount() {
-            return (int)(World<TWorld>.CalculateEntitiesCapacity() / Const.ENTITIES_IN_SEGMENT);
+            return (int)(World.CalculateEntitiesCapacity() / Const.ENTITIES_IN_SEGMENT);
         }
 
         private static bool IsSegmentNonEmpty(ComponentsHandle handle, uint segmentIdx) {
@@ -317,7 +311,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     EditorGUIUtility.AddCursorRect(cellRect, MouseCursor.Link);
 
                     if (Event.current.type == EventType.MouseDown) {
-                        var system = EcsDebug<TWorld>.DebugViewSystem;
+                        var system = EcsDebug.DebugViewSystem;
                         system.SetSegmentFilter(handle, (uint)seg);
                         _navigation?.SelectTab("Entities");
                         Event.current.Use();
@@ -459,9 +453,9 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             BeginHorizontal();
             LabelField(string.Empty, Ui.LabelStyleThemeCenter, Ui.WidthLine(200));
             Ui.DrawSeparator();
-            LabelField(World<TWorld>.CalculateEntitiesCount().ToString(), Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
+            LabelField(World.CalculateEntitiesCount().ToString(), Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
             Ui.DrawSeparator();
-            LabelField(World<TWorld>.CalculateEntitiesCapacity().ToString(), Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
+            LabelField(World.CalculateEntitiesCapacity().ToString(), Ui.LabelStyleThemeCenter, Ui.WidthLine(90));
             Ui.DrawSeparator();
             EndHorizontal();
 

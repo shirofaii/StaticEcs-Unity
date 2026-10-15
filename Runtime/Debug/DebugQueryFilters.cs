@@ -28,7 +28,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             Handles = handles;
         }
 
-        public ulong FilterChunk<TWorld>(uint chunkIdx) where TWorld : struct, IWorldType {
+        public ulong FilterChunk(uint chunkIdx) {
             switch (Type) {
                 case QueryMethodType.ALL:
                 case QueryMethodType.ALL_ONLY_DISABLED:
@@ -61,7 +61,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
         }
 
-        public ulong FilterEntities<TWorld>(uint segmentIdx, byte segmentBlockIdx) where TWorld : struct, IWorldType {
+        public ulong FilterEntities(uint segmentIdx, byte segmentBlockIdx) {
             switch (Type) {
                 case QueryMethodType.ALL:
                     ulong mask = ulong.MaxValue;
@@ -124,13 +124,13 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
         }
 
-        public void PushQueryData<TWorld>(QueryData data) where TWorld : struct, IWorldType { }
+        public void PushQueryData(QueryData data) { }
 
-        public void PopQueryData<TWorld>() where TWorld : struct, IWorldType { }
+        public void PopQueryData() { }
         #if FFS_ECS_DEBUG
-        public void Assert<TWorld>() where TWorld : struct, IWorldType { }
+        public void Assert() { }
 
-        public void Block<TWorld>(int val) where TWorld : struct, IWorldType { }
+        public void Block(int val) { }
         #endif
 
     }
@@ -151,28 +151,28 @@ namespace FFS.Libraries.StaticEcs.Unity {
             _filters.AddRange(other._filters);
         }
 
-        public ulong FilterChunk<TWorld>(uint chunkIdx) where TWorld : struct, IWorldType {
+        public ulong FilterChunk(uint chunkIdx) {
             ulong mask = ulong.MaxValue;
             foreach (var filter in _filters) {
-                mask &= filter.FilterChunk<TWorld>(chunkIdx);
+                mask &= filter.FilterChunk(chunkIdx);
             }
 
             return mask;
         }
 
-        public ulong FilterEntities<TWorld>(uint segmentIdx, byte segmentBlockIdx) where TWorld : struct, IWorldType {
+        public ulong FilterEntities(uint segmentIdx, byte segmentBlockIdx) {
             ulong mask = ulong.MaxValue;
             foreach (var filter in _filters) {
-                mask &= filter.FilterEntities<TWorld>(segmentIdx, segmentBlockIdx);
+                mask &= filter.FilterEntities(segmentIdx, segmentBlockIdx);
             }
 
             return mask;
         }
 
         #if FFS_ECS_DEBUG
-        public void Block<TWorld>(int val) where TWorld : struct, IWorldType {
+        public void Block(int val) {
             foreach (var filter in _filters) {
-                filter.Block<TWorld>(val);
+                filter.Block(val);
             }
         }
         #endif

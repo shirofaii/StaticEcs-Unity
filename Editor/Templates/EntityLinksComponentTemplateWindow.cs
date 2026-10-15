@@ -12,9 +12,9 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         Vector2 scroll;
 
         string nameSpace;
-        string worldName;
-        string worldTypeName;
-        Type worldType;
+        string worldName = "World";
+        string worldTypeName = "World";
+        Type worldType = typeof(World);
 
         bool withHooks = false;
 
@@ -48,22 +48,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         }
 
         void OnGUI() {
-            if (worldType == null) {
-                for (var i = 0; i < MetaData.WorldsMetaData.Count; i++) {
-                    worldType = MetaData.WorldsMetaData[i].WorldTypeType;
-                    worldName = MetaData.WorldsMetaData[i].EditorName;
-                    worldTypeName = worldType.Name;
-                    break;
-                }
-            }
             scroll = EditorGUILayout.BeginScrollView(scroll);
 
 
             EditorGUILayout.BeginHorizontal();
             {
-                if (Ui.SettingButton) {
-                    DrawWorldMenu();
-                }
                 EditorGUILayout.LabelField("World:", Ui.WidthLine(60));
                 EditorGUILayout.LabelField(worldName, Ui.LabelStyleThemeBold);
                 if (worldType != null && names.Length > 0 && GUILayout.Button("Create Links-Components", Ui.ButtonStyleYellow)) {
@@ -126,24 +115,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUILayout.EndScrollView();
         }
 
-        private void DrawWorldMenu() {
-            var menu = new GenericMenu();
-            for (var i = 0; i < MetaData.WorldsMetaData.Count; i++) {
-                var i1 = i;
-                menu.AddItem(
-                    new GUIContent(MetaData.WorldsMetaData[i].EditorName),
-                    false,
-                    objType => {
-                        worldType = MetaData.WorldsMetaData[i1].WorldTypeType;
-                        worldName = MetaData.WorldsMetaData[i1].EditorName;
-                        worldTypeName = worldType.Name;
-                    },
-                    MetaData.WorldsMetaData[i1].WorldTypeType);
-            }
-
-            menu.ShowAsContext();
-        }
-
         public void CreateFiles() {
             foreach (var componentName in names) {
                 var fileName = $"{path}/{componentName}.cs";
@@ -183,7 +154,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             sb.AppendLine($"#endif");
             sb.AppendLine("using System.Runtime.CompilerServices;", withExtensions);
             sb.AppendLine("using static System.Runtime.CompilerServices.MethodImplOptions;", withExtensions);
-            sb.AppendLine($"using static FFS.Libraries.StaticEcs.World<{worldTypeName}>;", withExtensions);
+            sb.AppendLine($"using static FFS.Libraries.StaticEcs.World;", withExtensions);
             sb.AppendLine();
             sb.AppendLine($"namespace {nameSpace} {{", !string.IsNullOrEmpty(nameSpace));
 
@@ -207,19 +178,19 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 }
             }
             sb.AppendLine($"{pad}public struct {linksName} : ILinksType, ILinksConfig<{linksName}> {{");
-            sb.AppendLine($"{pad}    public ComponentTypeConfig<World<TWorld>.Links<{linksName}>> Config<TWorld>() where TWorld : struct, IWorldType");
+            sb.AppendLine($"{pad}    public ComponentTypeConfig<World.Links<{linksName}>> Config()");
             sb.AppendLine($"{pad}        => new(guid: new(\"{GUID.Generate().ToString()}\"));");
             sb.AppendLine();
             if (withHooks) {
-                sb.AppendLine($"{pad}    public void OnAdd<TWorld>(World<TWorld>.Entity self, EntityGID link) where TWorld : struct, IWorldType {{");
+                sb.AppendLine($"{pad}    public void OnAdd(World.Entity self, EntityGID link) {{");
                 sb.AppendLine($"{pad}        // TODO implement this");
                 sb.AppendLine($"{pad}    }}");
                 sb.AppendLine();
-                sb.AppendLine($"{pad}    public void OnDelete<TWorld>(World<TWorld>.Entity self, EntityGID link, HookReason reason) where TWorld : struct, IWorldType {{");
+                sb.AppendLine($"{pad}    public void OnDelete(World.Entity self, EntityGID link, HookReason reason) {{");
                 sb.AppendLine($"{pad}        // TODO implement this");
                 sb.AppendLine($"{pad}    }}");
                 sb.AppendLine();
-                sb.AppendLine($"{pad}    public void CopyTo<TWorld>(World<TWorld>.Entity self, World<TWorld>.Entity other, EntityGID link) where TWorld : struct, IWorldType {{");
+                sb.AppendLine($"{pad}    public void CopyTo(World.Entity self, World.Entity other, EntityGID link) {{");
                 sb.AppendLine($"{pad}        // TODO implement this");
                 sb.AppendLine($"{pad}    }}");
             }

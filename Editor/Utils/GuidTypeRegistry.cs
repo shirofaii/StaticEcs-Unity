@@ -127,11 +127,9 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             if (innerOrSimple == null) return null;
             if (!IsWrapperKind(kind)) return innerOrSimple;
 
-            var worldType = FindTypeByFullName(worldTypeFullName);
-            if (worldType == null) return null;
-            var nested = typeof(World<>).GetNestedType(WrapperNestedName(kind));
+            var nested = typeof(World).GetNestedType(WrapperNestedName(kind));
             if (nested == null) return null;
-            return nested.MakeGenericType(worldType, innerOrSimple);
+            return nested.MakeGenericType(innerOrSimple);
         }
 
         private static Type ResolveType(StaticEcsTypeGuidRegistry.TypeIdentity id) {

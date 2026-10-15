@@ -2,10 +2,8 @@ using UnityEditor;
 using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity.Editor {
-    [CanEditMultipleObjects]
-    public abstract class StaticEcsEntityProviderEditor<TWorld, TSelf> : UnityEditor.Editor
-        where TWorld : struct, IWorldType
-        where TSelf : StaticEcsEntityProvider<TWorld> {
+    [CustomEditor(typeof(StaticEcsEntityProvider), true), CanEditMultipleObjects]
+    public class StaticEcsEntityProviderEditor : UnityEditor.Editor {
 
         private const string FoldoutKeyPrefix = "StaticEcsEntityProviderFoldout_";
 
@@ -13,7 +11,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         public override void OnInspectorGUI() {
             if (targets.Length <= 1) {
-                DrawProvider((TSelf) target);
+                DrawProvider((StaticEcsEntityProvider) target);
                 return;
             }
 
@@ -22,7 +20,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             EditorGUILayout.Space();
 
             for (var i = 0; i < targets.Length; i++) {
-                var provider = (TSelf) targets[i];
+                var provider = (StaticEcsEntityProvider) targets[i];
 #if UNITY_6000_4_OR_NEWER
                 var key = FoldoutKeyPrefix + provider.GetEntityId();
 #else
@@ -42,12 +40,12 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
         }
 
-        private void DrawProvider(TSelf provider) {
+        private void DrawProvider(StaticEcsEntityProvider provider) {
             if (!provider.EntityIsActual()) {
                 DrawDefaultInspector();
             }
 
-            Drawer.DrawEntity<TWorld, TSelf>(provider, DrawMode.Inspector);
+            Drawer.DrawEntity(provider, DrawMode.Inspector);
         }
     }
 }

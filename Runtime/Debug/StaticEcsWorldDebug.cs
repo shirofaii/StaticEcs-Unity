@@ -29,13 +29,9 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public Type Type => TypeDescriptorData.Types[Value];
     }
 
-    public abstract class AbstractWorldData {
+    public sealed class WorldData {
         public WorldHandle Handle;
         public Func<EntityGID, string> WindowNameFunction;
-    }
-
-    internal class WorldData<TWorld> : AbstractWorldData
-        where TWorld : struct, IWorldType {
     }
 }
 #endif

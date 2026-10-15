@@ -467,14 +467,14 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 ConfigKind.Multi => "Multi",
                 _ => null,
             };
-            foreach (var meta in MetaData.PerWorldMetaData.Values) {
+            if (MetaData.Meta is { } meta) {
                 if (wrapperBase != null) {
                     foreach (var m in meta.Components) {
                         if (m.Type == null) continue;
                         if (!Drawer.IsWorldWrapperTypeMatch(m.Type, wrapperBase)) continue;
                         if (seen.Add(m.Type)) yield return m.Type;
                     }
-                    continue;
+                    yield break;
                 }
                 switch (kind) {
                     case ConfigKind.Component:

@@ -161,8 +161,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             sb.AppendLine($"#endif");
             sb.AppendLine();
             sb.AppendLine($"[StaticEcsEditorName(\"{worldEditorName}\")]", !string.IsNullOrEmpty(worldEditorName));
-            sb.AppendLine($"public struct {worldTypeName} : IWorldType {{ }}");
-            sb.AppendLine($"public abstract class {worldAliasName} : World<{worldTypeName}> {{ }}");
+            sb.AppendLine($"public abstract class {worldAliasName} : World {{ }}");
             sb.AppendLine($"public struct {updateSystemsTypeName} : ISystemsType {{ }}", updateSystems);
             sb.AppendLine($"public struct {fixedUpdateSystemsTypeName} : ISystemsType {{ }}", fixedUpdateSystems);
             sb.AppendLine($"public struct {lateUpdateSystemsTypeName} : ISystemsType {{ }}", lateUpdateSystems);
@@ -196,7 +195,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             sb.AppendLine();
 
             if (debugWorld && debugSystemsType != null) {
-                sb.AppendLine($"{pad}        EcsDebug<{worldTypeName}>.AddWorld<{debugSystemsType}>();");
+                sb.AppendLine($"{pad}        EcsDebug.AddWorld<{debugSystemsType}>();");
             }
             sb.AppendLine($"{pad}        {worldAliasName}.Types().RegisterAll();");
             sb.AppendLine();

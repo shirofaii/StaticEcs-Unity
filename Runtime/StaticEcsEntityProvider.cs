@@ -15,8 +15,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     #endif
-    public abstract partial class StaticEcsEntityProvider<TWorld> : AbstractStaticEcsEntityProvider
-        where TWorld : struct, IWorldType {
+    public partial class StaticEcsEntityProvider : AbstractStaticEcsEntityProvider {
 
         public OnDestroyType onDestroyType = OnDestroyType.None;
         public bool disableEntityOnCreate;
@@ -34,7 +33,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             set => entityGid = value;
         }
 
-        public World<TWorld>.Entity Entity => entityGid.Unpack<TWorld>();
+        public World.Entity Entity => entityGid.Unpack();
 
         protected void Awake() {
             if (UsageType == UsageType.OnAwake) {
@@ -50,37 +49,37 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
         protected void OnEnable() {
             if (onEnableAndDisable
-                && World<TWorld>.Status == WorldStatus.Initialized
-                && entityGid.TryUnpack<TWorld>(out var e)) {
+                && World.Status == WorldStatus.Initialized
+                && entityGid.TryUnpack(out var e)) {
                 e.Enable();
             }
         }
 
         protected void OnDisable() {
             if (onEnableAndDisable
-                && World<TWorld>.Status == WorldStatus.Initialized
-                && entityGid.TryUnpack<TWorld>(out var e)) {
+                && World.Status == WorldStatus.Initialized
+                && entityGid.TryUnpack(out var e)) {
                 e.Disable();
             }
         }
 
         protected void OnDestroy() {
             if (onDestroyType == OnDestroyType.DestroyEntity
-                && World<TWorld>.Status == WorldStatus.Initialized
-                && entityGid.Status<TWorld>() == GIDStatus.Active) {
-                entityGid.Unpack<TWorld>().Destroy();
+                && World.Status == WorldStatus.Initialized
+                && entityGid.Status() == GIDStatus.Active) {
+                entityGid.Unpack().Destroy();
             }
 
             entityGid = default;
         }
 
         public override bool CreateEntity() {
-            if (World<TWorld>.Status != WorldStatus.Initialized) {
-                Debug.LogWarning($"You're trying to create an entity in an uninitialized world {typeof(TWorld).Name}");
+            if (World.Status != WorldStatus.Initialized) {
+                Debug.LogWarning($"You're trying to create an entity in an uninitialized world {typeof(World).Name}");
                 return false;
             }
 
-            var entity = World<TWorld>.NewEntity(entityType);
+            var entity = World.NewEntity(entityType);
             entityGid = entity;
 
             if (providers != null) {
@@ -98,7 +97,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             }
 
             if (disableEntityOnCreate) {
-                entityGid.Unpack<TWorld>().Disable();
+                entityGid.Unpack().Disable();
             }
 
             PostEntityProviderCreate.Instance.Register(this);
@@ -107,11 +106,11 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
         public override void ResolveLinks() {
             if (providers == null) return;
-            if (World<TWorld>.Status != WorldStatus.Initialized) return;
-            if (entityGid.Status<TWorld>() != GIDStatus.Active) return;
+            if (World.Status != WorldStatus.Initialized) return;
+            if (entityGid.Status() != GIDStatus.Active) return;
 
-            var entity = entityGid.Unpack<TWorld>();
-            ref var world = ref World<TWorld>.Data.Handle;
+            var entity = entityGid.Unpack();
+            ref var world = ref World.Data.Handle;
 
             for (var i = 0; i < providers.Count; i++) {
                 var provider = providers[i];

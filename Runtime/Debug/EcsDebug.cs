@@ -10,15 +10,15 @@ using Unity.IL2CPP.CompilerServices;
 namespace FFS.Libraries.StaticEcs.Unity {
     #if UNITY_EDITOR
     internal sealed class StaticEcsDebugData {
-        internal static readonly Dictionary<Type, AbstractWorldData> Worlds = new();
+        internal static WorldData Current;
     }
     #endif
 
-    public abstract class EcsDebug<TWorld> where TWorld : struct, IWorldType {
+    public abstract class EcsDebug {
 
         #if UNITY_EDITOR
         #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-        public static DebugViewSystem<TWorld> DebugViewSystem { get; private set; }
+        public static DebugViewSystem DebugViewSystem { get; private set; }
         #endif
         #endif
 
@@ -26,18 +26,18 @@ namespace FFS.Libraries.StaticEcs.Unity {
             where TSystemsType : struct, ISystemsType {
             #if UNITY_EDITOR
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            if (World<TWorld>.Status == WorldStatus.NotCreated) {
+            if (World.Status == WorldStatus.NotCreated) {
                 throw new InvalidOperationException("StaticEcsWorldDebug Debug mode connection is possible only after world creation");
             }
 
-            var worldData = new WorldData<TWorld> {
-                Handle = World<TWorld>.Data.Handle,
+            var worldData = new WorldData {
+                Handle = World.Data.Handle,
                 WindowNameFunction = windowEntityNameFunction,
             };
 
-            StaticEcsDebugData.Worlds[typeof(TWorld)] = worldData;
-            DebugViewSystem = new DebugViewSystem<TWorld>();
-            World<TWorld>.Systems<TSystemsType>.Add(DebugViewSystem, systemOrder);
+            StaticEcsDebugData.Current = worldData;
+            DebugViewSystem = new DebugViewSystem();
+            World.Systems<TSystemsType>.Add(DebugViewSystem, systemOrder);
             #endif
             #endif
         }
@@ -46,7 +46,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             #if UNITY_EDITOR
             #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
             DebugViewSystem = null;
-            StaticEcsDebugData.Worlds.Remove(typeof(TWorld));
+            StaticEcsDebugData.Current = null;
             #endif
             #endif
         }
