@@ -7,8 +7,7 @@ using System.Diagnostics;
 namespace FFS.Libraries.StaticEcs.Unity {
 
     public enum DebugCommandType : byte {
-        SetComponent, Delete, EnableComponent,
-        DisableComponent, SetTag, EnableEntity,
+        SetComponent, Delete, SetTag, EnableEntity,
         DisableEntity, DestroyEntity,
     }
 
@@ -115,18 +114,6 @@ namespace FFS.Libraries.StaticEcs.Unity {
                         }
 
                         break;
-                    case DebugCommandType.EnableComponent:
-                        if (World.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var enHandle)) {
-                            enHandle.Enable(entity.ID);
-                        }
-
-                        break;
-                    case DebugCommandType.DisableComponent:
-                        if (World.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var disHandle)) {
-                            disHandle.Disable(entity.ID);
-                        }
-
-                        break;
                     case DebugCommandType.SetTag:
                         if (World.Data.Handle.TryGetComponentsHandle(cmd.TargetType, out var tagSetHandle)) {
                             tagSetHandle.Set(entity.ID);
@@ -200,7 +187,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
             var baseEntityId = segIdx * Const.ENTITIES_IN_SEGMENT;
 
             for (var blockIdx = 0; blockIdx < Const.BLOCKS_IN_SEGMENT && _snapshot.Count < max; blockIdx++) {
-                var mask = handle.AnyMask(segIdx, blockIdx);
+                var mask = handle.Mask(segIdx, blockIdx);
                 while (mask != 0 && _snapshot.Count < max) {
                     var bit = Utils.PopLsb(ref mask);
                     var entityId = (uint) (baseEntityId + blockIdx * Const.ENTITIES_IN_BLOCK + bit);

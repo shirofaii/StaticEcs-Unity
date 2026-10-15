@@ -13,9 +13,7 @@ using Unity.IL2CPP.CompilerServices;
 namespace FFS.Libraries.StaticEcs.Unity {
 
     public enum QueryMethodType {
-        ALL, ALL_ONLY_DISABLED, ALL_WITH_DISABLED,
-        NONE, NONE_WITH_DISABLED, ANY,
-        ANY_ONLY_DISABLED, ANY_WITH_DISABLED,
+        ALL, NONE, ANY,
     }
 
     public struct HandleComponentsFilter : ICustomQueryFilter {
@@ -31,8 +29,6 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public ulong FilterChunk(uint chunkIdx) {
             switch (Type) {
                 case QueryMethodType.ALL:
-                case QueryMethodType.ALL_ONLY_DISABLED:
-                case QueryMethodType.ALL_WITH_DISABLED:
                     ulong allMask = ulong.MaxValue;
                     foreach (var handle in Handles) {
                         allMask &= handle.HeuristicChunk(chunkIdx).NotEmptyBlocks.Value;
@@ -40,7 +36,6 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
                     return allMask;
                 case QueryMethodType.NONE:
-                case QueryMethodType.NONE_WITH_DISABLED:
                     ulong noneMask = ulong.MaxValue;
                     foreach (var handle in Handles) {
                         noneMask &= ~handle.HeuristicChunk(chunkIdx).FullBlocks.Value;
@@ -48,8 +43,6 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
                     return noneMask;
                 case QueryMethodType.ANY:
-                case QueryMethodType.ANY_ONLY_DISABLED:
-                case QueryMethodType.ANY_WITH_DISABLED:
                     ulong anyMask = 0;
                     foreach (var handle in Handles) {
                         anyMask |= handle.HeuristicChunk(chunkIdx).NotEmptyBlocks.Value;
@@ -66,59 +59,24 @@ namespace FFS.Libraries.StaticEcs.Unity {
                 case QueryMethodType.ALL:
                     ulong mask = ulong.MaxValue;
                     foreach (var handle in Handles) {
-                        mask &= handle.EnabledMask(segmentIdx, segmentBlockIdx);
+                        mask &= handle.Mask(segmentIdx, segmentBlockIdx);
                     }
 
                     return mask;
-                case QueryMethodType.ALL_ONLY_DISABLED:
-                    ulong maskD = ulong.MaxValue;
-                    foreach (var handle in Handles) {
-                        maskD &= handle.DisabledMask(segmentIdx, segmentBlockIdx);
-                    }
-
-                    return maskD;
-                case QueryMethodType.ALL_WITH_DISABLED:
-                    ulong maskA = ulong.MaxValue;
-                    foreach (var handle in Handles) {
-                        maskA &= handle.AnyMask(segmentIdx, segmentBlockIdx);
-                    }
-
-                    return maskA;
                 case QueryMethodType.NONE:
                     ulong nMask = ulong.MaxValue;
                     foreach (var handle in Handles) {
-                        nMask &= ~handle.EnabledMask(segmentIdx, segmentBlockIdx);
+                        nMask &= ~handle.Mask(segmentIdx, segmentBlockIdx);
                     }
 
                     return nMask;
-                case QueryMethodType.NONE_WITH_DISABLED:
-                    ulong nMaskA = ulong.MaxValue;
-                    foreach (var handle in Handles) {
-                        nMaskA &= ~handle.AnyMask(segmentIdx, segmentBlockIdx);
-                    }
-
-                    return nMaskA;
                 case QueryMethodType.ANY:
                     ulong aMask = 0;
                     foreach (var handle in Handles) {
-                        aMask |= handle.EnabledMask(segmentIdx, segmentBlockIdx);
+                        aMask |= handle.Mask(segmentIdx, segmentBlockIdx);
                     }
 
                     return aMask;
-                case QueryMethodType.ANY_ONLY_DISABLED:
-                    ulong aMaskD = 0;
-                    foreach (var handle in Handles) {
-                        aMaskD |= handle.DisabledMask(segmentIdx, segmentBlockIdx);
-                    }
-
-                    return aMaskD;
-                case QueryMethodType.ANY_WITH_DISABLED:
-                    ulong aMaskA = 0;
-                    foreach (var handle in Handles) {
-                        aMaskA |= handle.AnyMask(segmentIdx, segmentBlockIdx);
-                    }
-
-                    return aMaskA;
                 default:
                     return ulong.MaxValue;
             }

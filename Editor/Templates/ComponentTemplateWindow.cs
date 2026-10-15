@@ -29,17 +29,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         bool unmanaged = false;
         bool withHooks = false;
 
-        bool disableable = false;
-
         bool withExtensions = true;
         bool refMethod = true;
         bool addMethod = true;
         bool setMethod = true;
         bool hasMethod = true;
-        bool hasDisabledMethod = true;
-        bool hasEnabledMethod = true;
-        bool enableMethod = true;
-        bool disableMethod = true;
         bool deleteMethod = true;
         bool copyMethod = true;
         bool moveMethod = true;
@@ -99,12 +93,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             withHooks = EditorGUILayout.Toggle("Hooks", withHooks);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("Markers:", EditorStyles.boldLabel);
-            EditorGUI.indentLevel++;
-            disableable = EditorGUILayout.Toggle("IDisableable", disableable);
-            EditorGUI.indentLevel--;
-
-            EditorGUILayout.Space(10);
             withColor = EditorGUILayout.Toggle("Editor color", withColor);
             if (withColor) {
                 EditorGUI.indentLevel++;
@@ -128,17 +116,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 addMethod = EditorGUILayout.Toggle("Add", addMethod);
                 setMethod = EditorGUILayout.Toggle("Set", setMethod);
                 hasMethod = EditorGUILayout.Toggle("Has", hasMethod);
-                if (disableable) {
-                    hasDisabledMethod = EditorGUILayout.Toggle("Has disabled", hasDisabledMethod);
-                    hasEnabledMethod = EditorGUILayout.Toggle("Has enabled", hasEnabledMethod);
-                    enableMethod = EditorGUILayout.Toggle("Enable", enableMethod);
-                    disableMethod = EditorGUILayout.Toggle("Disable", disableMethod);
-                } else {
-                    hasDisabledMethod = false;
-                    hasEnabledMethod = false;
-                    enableMethod = false;
-                    disableMethod = false;
-                }
                 deleteMethod = EditorGUILayout.Toggle("Delete", deleteMethod);
                 copyMethod = EditorGUILayout.Toggle("Copy", copyMethod);
                 moveMethod = EditorGUILayout.Toggle("Move", moveMethod);
@@ -212,7 +189,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 }
             }
             var interfaces = $"IComponent, IComponentConfig<{componentName}>";
-            if (disableable) interfaces += ", IDisableable";
             sb.AppendLine($"{pad}public struct {componentName} : {interfaces} {{");
             sb.AppendLine($"{pad}    // TODO Write your component fields");
             sb.AppendLine("");
@@ -262,10 +238,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Add{componentName}(this Entity entity, {componentName} value) => Components<{componentName}>.Instance.Add(entity) = value;\n", addMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Set{componentName}(this Entity entity, {componentName} value) => Components<{componentName}>.Instance.Set(entity, value);\n", setMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool Has{componentName}(this Entity entity) => Components<{componentName}>.Instance.Has(entity);\n", hasMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool HasDisabled{componentName}(this Entity entity) => Components<{componentName}>.Instance.HasDisabled(entity);\n",  hasDisabledMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool HasEnabled{componentName}(this Entity entity) => Components<{componentName}>.Instance.HasEnabled(entity);\n",   hasEnabledMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static ToggleResult Enable{componentName}(this Entity entity) => Components<{componentName}>.Instance.Enable(entity);\n", enableMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static ToggleResult Disable{componentName}(this Entity entity) => Components<{componentName}>.Instance.Disable(entity);\n", disableMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool Delete{componentName}(this Entity entity) => Components<{componentName}>.Instance.Delete(entity);\n", deleteMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Copy{componentName}To(this Entity entity, Entity dst) => Components<{componentName}>.Instance.Copy(entity, dst);\n", copyMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Move{componentName}To(this Entity entity, Entity dst) => Components<{componentName}>.Instance.Move(entity, dst);\n", moveMethod);

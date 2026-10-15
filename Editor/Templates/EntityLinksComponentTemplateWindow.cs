@@ -23,10 +23,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         bool addMethod = true;
         bool setMethod = true;
         bool hasMethod = true;
-        bool hasDisabledMethod = true;
-        bool hasEnabledMethod = true;
-        bool enableMethod = true;
-        bool disableMethod = true;
         bool deleteMethod = true;
         bool copyMethod = true;
         bool moveMethod = true;
@@ -101,10 +97,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 addMethod = EditorGUILayout.Toggle("Add", addMethod);
                 setMethod = EditorGUILayout.Toggle("Set", setMethod);
                 hasMethod = EditorGUILayout.Toggle("Has", hasMethod);
-                hasDisabledMethod = EditorGUILayout.Toggle("Has disabled", hasDisabledMethod);
-                hasEnabledMethod = EditorGUILayout.Toggle("Has enabled", hasEnabledMethod);
-                enableMethod = EditorGUILayout.Toggle("Enable", enableMethod);
-                disableMethod = EditorGUILayout.Toggle("Disable", disableMethod);
                 deleteMethod = EditorGUILayout.Toggle("Delete", deleteMethod);
                 copyMethod = EditorGUILayout.Toggle("Copy", copyMethod);
                 moveMethod = EditorGUILayout.Toggle("Move", moveMethod);
@@ -206,10 +198,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static ref Links<{linksName}> Add{linksName}Links(this Entity entity) => ref Components<Links<{linksName}>>.Instance.Add(entity);\n", addMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Set{linksName}Links(this Entity entity, Links<{linksName}> value) => Components<Links<{linksName}>>.Instance.Set(entity, value);\n", setMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool Has{linksName}Links(this Entity entity) => Components<Links<{linksName}>>.Instance.Has(entity);\n", hasMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool HasDisabled{linksName}Links(this Entity entity) => Components<Links<{linksName}>>.Instance.HasDisabled(entity);\n",  hasDisabledMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool HasEnabled{linksName}Links(this Entity entity) => Components<Links<{linksName}>>.Instance.HasEnabled(entity);\n",   hasEnabledMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static ToggleResult Enable{linksName}Links(this Entity entity) => Components<Links<{linksName}>>.Instance.Enable(entity);\n", enableMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static ToggleResult Disable{linksName}Links(this Entity entity) => Components<Links<{linksName}>>.Instance.Disable(entity);\n", disableMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool Delete{linksName}Links(this Entity entity) => Components<Links<{linksName}>>.Instance.Delete(entity);\n", deleteMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Copy{linksName}LinksTo(this Entity entity, Entity dst) => Components<Links<{linksName}>>.Instance.Copy(entity, dst);\n", copyMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Move{linksName}LinksTo(this Entity entity, Entity dst) => Components<Links<{linksName}>>.Instance.Move(entity, dst);\n", moveMethod);

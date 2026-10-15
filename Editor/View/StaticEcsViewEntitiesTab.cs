@@ -149,25 +149,13 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             foreach (var gid in _pinedEntities) settings.pinnedEntities.Add(gid.Raw);
 
             settings.filterAll.Clear();
-            settings.filterAllOnlyDisabled.Clear();
-            settings.filterAllWithDisabled.Clear();
             settings.filterNone.Clear();
-            settings.filterNoneWithDisabled.Clear();
             settings.filterAny.Clear();
-            settings.filterAnyOnlyDisabled.Clear();
-            settings.filterAnyWithDisabled.Clear();
 
             foreach (var entry in _filters) {
-                var method = ToQueryMethod(entry.Mode, entry.Variant);
-                var bucket = method switch {
-                    QueryMethodType.ALL => settings.filterAll,
-                    QueryMethodType.ALL_ONLY_DISABLED => settings.filterAllOnlyDisabled,
-                    QueryMethodType.ALL_WITH_DISABLED => settings.filterAllWithDisabled,
-                    QueryMethodType.NONE => settings.filterNone,
-                    QueryMethodType.NONE_WITH_DISABLED => settings.filterNoneWithDisabled,
-                    QueryMethodType.ANY => settings.filterAny,
-                    QueryMethodType.ANY_ONLY_DISABLED => settings.filterAnyOnlyDisabled,
-                    QueryMethodType.ANY_WITH_DISABLED => settings.filterAnyWithDisabled,
+                var bucket = entry.Mode switch {
+                    FilterMode.None => settings.filterNone,
+                    FilterMode.Any => settings.filterAny,
                     _ => settings.filterAll,
                 };
                 bucket.Add(entry.Meta.FullName);
@@ -214,22 +202,17 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
 
             _filters.Clear();
-            LoadFilterBucket(settings.filterAll, FilterMode.All, FilterVariant.Default);
-            LoadFilterBucket(settings.filterAllOnlyDisabled, FilterMode.All, FilterVariant.OnlyDisabled);
-            LoadFilterBucket(settings.filterAllWithDisabled, FilterMode.All, FilterVariant.WithDisabled);
-            LoadFilterBucket(settings.filterNone, FilterMode.None, FilterVariant.Default);
-            LoadFilterBucket(settings.filterNoneWithDisabled, FilterMode.None, FilterVariant.WithDisabled);
-            LoadFilterBucket(settings.filterAny, FilterMode.Any, FilterVariant.Default);
-            LoadFilterBucket(settings.filterAnyOnlyDisabled, FilterMode.Any, FilterVariant.OnlyDisabled);
-            LoadFilterBucket(settings.filterAnyWithDisabled, FilterMode.Any, FilterVariant.WithDisabled);
+            LoadFilterBucket(settings.filterAll, FilterMode.All);
+            LoadFilterBucket(settings.filterNone, FilterMode.None);
+            LoadFilterBucket(settings.filterAny, FilterMode.Any);
             _filterDirty = true;
         }
 
-        private void LoadFilterBucket(List<string> source, FilterMode mode, FilterVariant variant) {
+        private void LoadFilterBucket(List<string> source, FilterMode mode) {
             foreach (var name in source) {
                 var meta = FindByFullName(_componentsAndTags, name);
                 if (meta != null) {
-                    _filters.Add(new FilterEntry { Meta = meta, Mode = mode, Variant = variant });
+                    _filters.Add(new FilterEntry { Meta = meta, Mode = mode });
                 }
             }
         }
@@ -463,9 +446,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             foreach (var idx in types) {
                 if (idx.HasComponent(entity)) {
-                    var style = idx.ComponentHandle.HasValue && typeof(IDisableable).IsAssignableFrom(idx.Type) && idx.ComponentHandle.Value.HasDisabled(entity.ID)
-                        ? Ui.LabelStyleGreyCenter
-                        : Ui.LabelStyleThemeCenter;
+                    var style = Ui.LabelStyleThemeCenter;
                     if (idx.ShowTableData) {
                         if (idx.ComponentHandle.HasValue && idx.ComponentHandle.Value.TryGetRaw(entity.ID, out var rawValue)) {
                                 if (idx.TryGetTableField(out var field)) {

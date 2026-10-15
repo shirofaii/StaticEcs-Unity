@@ -310,10 +310,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             var type = component.ComponentType;
 
             var typeName = type.EditorTypeName();
-            var disabled = provider.IsDisabled(type);
-            if (disabled) {
-                typeName += " [Disabled]";
-            }
 
             var foldoutKey = HashCode.Combine(provider, type.FullName);
             if (initializedFoldouts.Add(foldoutKey)) {

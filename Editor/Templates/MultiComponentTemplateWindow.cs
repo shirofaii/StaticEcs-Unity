@@ -26,10 +26,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         bool addMethod = true;
         bool setMethod = true;
         bool hasMethod = true;
-        bool hasDisabledMethod = true;
-        bool hasEnabledMethod = true;
-        bool enableMethod = true;
-        bool disableMethod = true;
         bool deleteMethod = true;
         bool copyMethod = true;
         bool moveMethod = true;
@@ -112,10 +108,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 addMethod = EditorGUILayout.Toggle("Add", addMethod);
                 setMethod = EditorGUILayout.Toggle("Set", setMethod);
                 hasMethod = EditorGUILayout.Toggle("Has", hasMethod);
-                hasDisabledMethod = EditorGUILayout.Toggle("Has disabled", hasDisabledMethod);
-                hasEnabledMethod = EditorGUILayout.Toggle("Has enabled", hasEnabledMethod);
-                enableMethod = EditorGUILayout.Toggle("Enable", enableMethod);
-                disableMethod = EditorGUILayout.Toggle("Disable", disableMethod);
                 deleteMethod = EditorGUILayout.Toggle("Delete", deleteMethod);
                 copyMethod = EditorGUILayout.Toggle("Copy", copyMethod);
                 moveMethod = EditorGUILayout.Toggle("Move", moveMethod);
@@ -230,10 +222,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static ref Multi<{elementName}> Add{elementName}Multi(this Entity entity) => ref Components<Multi<{elementName}>>.Instance.Add(entity);\n", addMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Set{elementName}Multi(this Entity entity, Multi<{elementName}> value) => Components<Multi<{elementName}>>.Instance.Set(entity, value);\n", setMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool Has{elementName}Multi(this Entity entity) => Components<Multi<{elementName}>>.Instance.Has(entity);\n", hasMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool HasDisabled{elementName}Multi(this Entity entity) => Components<Multi<{elementName}>>.Instance.HasDisabled(entity);\n",  hasDisabledMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool HasEnabled{elementName}Multi(this Entity entity) => Components<Multi<{elementName}>>.Instance.HasEnabled(entity);\n",   hasEnabledMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static ToggleResult Enable{elementName}Multi(this Entity entity) => Components<Multi<{elementName}>>.Instance.Enable(entity);\n", enableMethod);
-                sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static ToggleResult Disable{elementName}Multi(this Entity entity) => Components<Multi<{elementName}>>.Instance.Disable(entity);\n", disableMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static bool Delete{elementName}Multi(this Entity entity) => Components<Multi<{elementName}>>.Instance.Delete(entity);\n", deleteMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Copy{elementName}MultiTo(this Entity entity, Entity dst) => Components<Multi<{elementName}>>.Instance.Copy(entity, dst);\n", copyMethod);
                 sb.AppendLine($"{pad}    [MethodImpl(AggressiveInlining)]\n{pad}    public static void Move{elementName}MultiTo(this Entity entity, Entity dst) => Components<Multi<{elementName}>>.Instance.Move(entity, dst);\n", moveMethod);

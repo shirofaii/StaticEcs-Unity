@@ -16,12 +16,10 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private CompositeHandleFilter _cachedFilter;
 
         internal enum FilterMode : byte { All, None, Any }
-        internal enum FilterVariant : byte { Default, OnlyDisabled, WithDisabled }
 
         internal class FilterEntry {
             public EditorEntityDataMetaByWorld Meta;
             public FilterMode Mode;
-            public FilterVariant Variant;
         }
 
         private readonly List<FilterEntry> _filters = new();
@@ -128,8 +126,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         private float MeasureChip(FilterEntry entry) {
             var content = new GUIContent(entry.Meta.Name);
             var size = _chipLabelStyle.CalcSize(content);
-            var extra = VariantBadge(entry.Variant) != null ? 18f : 0f;
-            return Mathf.Ceil(size.x) + 22f + extra + 20f;
+            return Mathf.Ceil(size.x) + 22f + 20f;
         }
 
         private bool DrawChip(FilterEntry entry, float width) {
@@ -146,10 +143,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             GUI.Label(prefixRect, ModeGlyph(entry.Mode), _chipPrefixStyle);
 
             var closeRect = new Rect(rect.xMax - 18f, rect.y + 2f, 16f, 16f);
-            var badge = VariantBadge(entry.Variant);
-            var badgeWidth = badge != null ? 18f : 0f;
             var labelX = prefixRect.xMax + 2f;
-            var labelWidth = rect.xMax - closeRect.width - 4f - badgeWidth - labelX;
+            var labelWidth = rect.xMax - closeRect.width - 4f - labelX;
             var labelRect = new Rect(labelX, rect.y, labelWidth, rect.height);
 
             if (entry.Meta.Type != null && entry.Meta.Type.EditorTypeColor(out var typeColor)) {
@@ -159,11 +154,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 GUI.contentColor = prev;
             } else {
                 GUI.Label(labelRect, entry.Meta.Name, _chipLabelStyle);
-            }
-
-            if (badge != null) {
-                var badgeRect = new Rect(labelRect.xMax, rect.y, badgeWidth, rect.height);
-                GUI.Label(badgeRect, badge, _chipPrefixStyle);
             }
 
             var remove = GUI.Button(closeRect, "\u2715", _chipCloseStyle);
@@ -186,27 +176,14 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         private void CycleMode(FilterEntry entry) {
             entry.Mode = (FilterMode) (((int) entry.Mode + 1) % 3);
-            if (entry.Mode == FilterMode.None && entry.Variant == FilterVariant.OnlyDisabled) {
-                entry.Variant = FilterVariant.Default;
-            }
             _filterDirty = true;
         }
 
         private void ShowChipContextMenu(FilterEntry entry) {
             var menu = new GenericMenu();
-            var isTag = !entry.Meta.ComponentHandle.HasValue;
-
             menu.AddItem(new GUIContent("Mode/All"), entry.Mode == FilterMode.All, () => SetMode(entry, FilterMode.All));
             menu.AddItem(new GUIContent("Mode/None"), entry.Mode == FilterMode.None, () => SetMode(entry, FilterMode.None));
             menu.AddItem(new GUIContent("Mode/Any"), entry.Mode == FilterMode.Any, () => SetMode(entry, FilterMode.Any));
-
-            menu.AddItem(new GUIContent("Variant/Default"), entry.Variant == FilterVariant.Default, () => SetVariant(entry, FilterVariant.Default));
-            if (isTag || entry.Mode == FilterMode.None) {
-                menu.AddDisabledItem(new GUIContent("Variant/Only disabled"), entry.Variant == FilterVariant.OnlyDisabled);
-            } else {
-                menu.AddItem(new GUIContent("Variant/Only disabled"), entry.Variant == FilterVariant.OnlyDisabled, () => SetVariant(entry, FilterVariant.OnlyDisabled));
-            }
-            menu.AddItem(new GUIContent("Variant/With disabled"), entry.Variant == FilterVariant.WithDisabled, () => SetVariant(entry, FilterVariant.WithDisabled));
 
             menu.AddSeparator("");
             menu.AddItem(new GUIContent("Remove"), false, () => {
@@ -219,14 +196,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         private void SetMode(FilterEntry entry, FilterMode mode) {
             entry.Mode = mode;
-            if (mode == FilterMode.None && entry.Variant == FilterVariant.OnlyDisabled) {
-                entry.Variant = FilterVariant.Default;
-            }
-            _filterDirty = true;
-        }
-
-        private void SetVariant(FilterEntry entry, FilterVariant variant) {
-            entry.Variant = variant;
             _filterDirty = true;
         }
 
@@ -240,7 +209,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 _filters.Add(new FilterEntry {
                     Meta = (EditorEntityDataMetaByWorld) payload,
                     Mode = FilterMode.All,
-                    Variant = FilterVariant.Default,
                 });
                 _filterDirty = true;
             });
@@ -265,12 +233,6 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             FilterMode.None => "\u2715",
             FilterMode.Any => "\u25C7",
             _ => "",
-        };
-
-        private static string VariantBadge(FilterVariant variant) => variant switch {
-            FilterVariant.OnlyDisabled => "D",
-            FilterVariant.WithDisabled => "\u00B1",
-            _ => null,
         };
 
         private static void DrawChipBorder(Rect rect) {
@@ -307,7 +269,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             if (!_filterActive || _filters.Count == 0) return false;
             var anyCounts = new Dictionary<QueryMethodType, int>();
             foreach (var entry in _filters) {
-                var method = ToQueryMethod(entry.Mode, entry.Variant);
+                var method = ToQueryMethod(entry.Mode);
                 if (IsAnyMethod(method)) {
                     anyCounts.TryGetValue(method, out var c);
                     anyCounts[method] = c + 1;
@@ -325,11 +287,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             if (_filters.Count == 0) return "Please, provide at least one filter";
             if (IsFilterValid()) {
                 foreach (var entry in _filters) {
-                    var method = ToQueryMethod(entry.Mode, entry.Variant);
+                    var method = ToQueryMethod(entry.Mode);
                     if (IsAnyMethod(method)) {
                         var count = 0;
                         foreach (var e2 in _filters) {
-                            if (ToQueryMethod(e2.Mode, e2.Variant) == method) count++;
+                            if (ToQueryMethod(e2.Mode) == method) count++;
                         }
                         if (count == 1) return "Please, provide at least two [Any] filter";
                     }
@@ -436,7 +398,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
             var buckets = new Dictionary<QueryMethodType, List<ComponentsHandle>>();
             foreach (var entry in _filters) {
-                var method = ToQueryMethod(entry.Mode, entry.Variant);
+                var method = ToQueryMethod(entry.Mode);
                 if (!buckets.TryGetValue(method, out var list)) {
                     list = new List<ComponentsHandle>();
                     buckets[method] = list;
@@ -453,27 +415,13 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             return _cachedFilter;
         }
 
-        internal static QueryMethodType ToQueryMethod(FilterMode mode, FilterVariant variant) {
-            return mode switch {
-                FilterMode.All => variant switch {
-                    FilterVariant.OnlyDisabled => QueryMethodType.ALL_ONLY_DISABLED,
-                    FilterVariant.WithDisabled => QueryMethodType.ALL_WITH_DISABLED,
-                    _ => QueryMethodType.ALL,
-                },
-                FilterMode.None => variant == FilterVariant.WithDisabled
-                    ? QueryMethodType.NONE_WITH_DISABLED
-                    : QueryMethodType.NONE,
-                FilterMode.Any => variant switch {
-                    FilterVariant.OnlyDisabled => QueryMethodType.ANY_ONLY_DISABLED,
-                    FilterVariant.WithDisabled => QueryMethodType.ANY_WITH_DISABLED,
-                    _ => QueryMethodType.ANY,
-                },
-                _ => QueryMethodType.ALL,
-            };
-        }
+        internal static QueryMethodType ToQueryMethod(FilterMode mode) => mode switch {
+            FilterMode.None => QueryMethodType.NONE,
+            FilterMode.Any => QueryMethodType.ANY,
+            _ => QueryMethodType.ALL,
+        };
 
-        private static bool IsAnyMethod(QueryMethodType m) =>
-            m == QueryMethodType.ANY || m == QueryMethodType.ANY_ONLY_DISABLED || m == QueryMethodType.ANY_WITH_DISABLED;
+        private static bool IsAnyMethod(QueryMethodType m) => m == QueryMethodType.ANY;
     }
 
 }

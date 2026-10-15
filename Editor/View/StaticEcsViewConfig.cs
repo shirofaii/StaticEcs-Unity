@@ -30,13 +30,8 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
         public bool gidFilterActive;
         public int gidFilterValue;
         public List<string> filterAll = new();
-        public List<string> filterAllOnlyDisabled = new();
-        public List<string> filterAllWithDisabled = new();
         public List<string> filterNone = new();
-        public List<string> filterNoneWithDisabled = new();
         public List<string> filterAny = new();
-        public List<string> filterAnyOnlyDisabled = new();
-        public List<string> filterAnyWithDisabled = new();
         public ComponentFoldoutMode foldoutMode = ComponentFoldoutMode.CollapseAll;
         public List<string> autoExpandComponentTypes = new();
         public bool sortComponents;

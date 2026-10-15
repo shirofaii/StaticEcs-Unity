@@ -15,33 +15,6 @@ namespace FFS.Libraries.StaticEcs.Unity {
             return providers.Count > 0;
         }
 
-        public virtual bool IsDisabled(Type componentType) {
-            if (!EntityIsActual()) return false;
-            return World.Data.Handle.TryGetComponentsHandle(componentType, out var handle) && typeof(IDisableable).IsAssignableFrom(componentType) && handle.HasDisabled(EntityGid.Id);
-        }
-
-        public virtual void Disable(Type componentType) {
-            if (!EntityIsActual()) return;
-            #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
-                Type = DebugCommandType.DisableComponent,
-                EntityGid = EntityGid,
-                TargetType = componentType,
-            });
-            #endif
-        }
-
-        public virtual void Enable(Type componentType) {
-            if (!EntityIsActual()) return;
-            #if ((DEBUG || FFS_ECS_ENABLE_DEBUG) && !FFS_ECS_DISABLE_DEBUG)
-            EcsDebug.DebugViewSystem.EnqueueCommand(new DebugCommand {
-                Type = DebugCommandType.EnableComponent,
-                EntityGid = EntityGid,
-                TargetType = componentType,
-            });
-            #endif
-        }
-
         private static readonly List<ComponentProvider> _componentProviderPool = new();
         private static readonly List<TagProvider> _tagProviderPool = new();
         private static int _componentPoolIdx;

@@ -237,19 +237,19 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
 
         private static bool IsSegmentNonEmpty(ComponentsHandle handle, uint segmentIdx) {
             return handle.IsSegmentAllocated(segmentIdx)
-                && (handle.AnyMask(segmentIdx, 0) != 0
-                 || handle.AnyMask(segmentIdx, 1) != 0
-                 || handle.AnyMask(segmentIdx, 2) != 0
-                 || handle.AnyMask(segmentIdx, 3) != 0);
+                && (handle.Mask(segmentIdx, 0) != 0
+                 || handle.Mask(segmentIdx, 1) != 0
+                 || handle.Mask(segmentIdx, 2) != 0
+                 || handle.Mask(segmentIdx, 3) != 0);
         }
 
         private static char GetSegmentChar(ComponentsHandle handle, uint segmentIdx) {
             if (!handle.IsSegmentAllocated(segmentIdx)) return SegmentNull;
             var filled = 0;
-            if (handle.AnyMask(segmentIdx, 0) != 0) filled++;
-            if (handle.AnyMask(segmentIdx, 1) != 0) filled++;
-            if (handle.AnyMask(segmentIdx, 2) != 0) filled++;
-            if (handle.AnyMask(segmentIdx, 3) != 0) filled++;
+            if (handle.Mask(segmentIdx, 0) != 0) filled++;
+            if (handle.Mask(segmentIdx, 1) != 0) filled++;
+            if (handle.Mask(segmentIdx, 2) != 0) filled++;
+            if (handle.Mask(segmentIdx, 3) != 0) filled++;
             return filled switch {
                 1 => SegmentBlock1,
                 2 => SegmentBlock2,
