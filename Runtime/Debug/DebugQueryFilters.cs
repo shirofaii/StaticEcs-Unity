@@ -18,7 +18,7 @@ namespace FFS.Libraries.StaticEcs.Unity {
         ANY_ONLY_DISABLED, ANY_WITH_DISABLED,
     }
 
-    public struct HandleComponentsFilter : IQueryFilter {
+    public struct HandleComponentsFilter : ICustomQueryFilter {
         public List<ComponentsHandle> Handles;
         private QueryMethodType Type;
 
@@ -135,19 +135,19 @@ namespace FFS.Libraries.StaticEcs.Unity {
 
     }
 
-    public struct CompositeHandleFilter : IQueryFilter {
-        private List<IQueryFilter> _filters;
+    public struct CompositeHandleFilter : ICustomQueryFilter {
+        private List<ICustomQueryFilter> _filters;
 
         public bool IsValid => _filters != null && _filters.Count > 0;
 
-        public void Add(IQueryFilter filter) {
-            _filters ??= new List<IQueryFilter>();
+        public void Add(ICustomQueryFilter filter) {
+            _filters ??= new List<ICustomQueryFilter>();
             _filters.Add(filter);
         }
 
         public void Merge(CompositeHandleFilter other) {
             if (other._filters == null) return;
-            _filters ??= new List<IQueryFilter>();
+            _filters ??= new List<ICustomQueryFilter>();
             _filters.AddRange(other._filters);
         }
 
