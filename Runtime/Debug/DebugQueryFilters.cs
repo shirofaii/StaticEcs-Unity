@@ -133,13 +133,6 @@ namespace FFS.Libraries.StaticEcs.Unity {
         public void Block<TWorld>(int val) where TWorld : struct, IWorldType { }
         #endif
 
-        #if FFS_ECS_BURST
-        [MethodImpl(AggressiveInlining)]
-        public ulong BurstFilterChunk<TWorld>(uint chunkIdx) where TWorld : struct, IWorldType => throw new Exception();
-
-        [MethodImpl(AggressiveInlining)]
-        public ulong BurstFilterEntities<TWorld>(uint segmentIdx, byte segmentBlockIdx) where TWorld : struct, IWorldType => throw new Exception();
-        #endif
     }
 
     public struct CompositeHandleFilter : IQueryFilter {
@@ -184,13 +177,6 @@ namespace FFS.Libraries.StaticEcs.Unity {
         }
         #endif
 
-        #if FFS_ECS_BURST
-        [MethodImpl(AggressiveInlining)]
-        public ulong BurstFilterChunk<TWorld>(uint chunkIdx) where TWorld : struct, IWorldType => throw new Exception();
-
-        [MethodImpl(AggressiveInlining)]
-        public ulong BurstFilterEntities<TWorld>(uint segmentIdx, byte segmentBlockIdx) where TWorld : struct, IWorldType => throw new Exception();
-        #endif
     }
 }
 #endif
