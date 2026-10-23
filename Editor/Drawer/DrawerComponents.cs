@@ -282,13 +282,17 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             GUI.Box(rect, GUIContent.none, "RL Header");
 
             var foldRect = new Rect(rect);
-            foldRect.x += 20;
-            foldRect.width -= 20 + 20;
-            
-            var colored = type.EditorTypeColor(out var color);
-            var labelStyle = colored
-                ? new GUIStyle(EditorStyles.boldLabel) { normal = { textColor = color } }
-                : EditorStyles.boldLabel;
+            foldRect.x += 16;
+            foldRect.width -= 16 + 20;
+
+            var header = EditorStyles.foldoutHeader;
+            var labelStyle = new GUIStyle(EditorStyles.boldLabel) {
+                padding = new RectOffset(header.padding.left, header.padding.right, header.padding.top, header.padding.bottom),
+                alignment = header.alignment,
+                fontSize = header.fontSize,
+            };
+            if (type.EditorTypeColor(out var color)) labelStyle.normal.textColor = color;
+            foldRect.x += 2;
             GUI.Label(foldRect, type.EditorTypeName(), labelStyle);
 
             var menuRect = new Rect(rect)
@@ -331,7 +335,10 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                 ? new GUIStyle(EditorStyles.foldoutHeader) { normal = { textColor = color } }
                 : EditorStyles.foldoutHeader;
             
+            var indent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
             var show = EditorGUI.Foldout(foldRect, openHideFlags.Contains(foldoutKey), typeName, true, style);
+            EditorGUI.indentLevel = indent;
             if (show) {
                 openHideFlags.Add(foldoutKey);
             } else {
@@ -418,6 +425,11 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
                     continue;
                 }
 
+                if (TryDrawEntityWrapperInline(iterator)) {
+                    if (!iterator.NextVisible(false)) break;
+                    continue;
+                }
+
                 try {
                     EditorGUILayout.PropertyField(iterator);
                 } catch (System.ArgumentException) {
@@ -459,15 +471,7 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             var label = ObjectNames.NicifyVariableName(property.name);
 
             if (typeName == "EntityGID") {
-                var gid = SerializedPropertyValueResolver.Resolve<EntityGID>(property);
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.PrefixLabel(label);
-                var (text, actual) = ResolveEntityGIDDisplay(gid);
-                EditorGUILayout.SelectableLabel(text, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
-                if (actual) {
-                    DrawInspectEntityButton(gid);
-                }
-                EditorGUILayout.EndHorizontal();
+                DrawEntityGIDRow(label, SerializedPropertyValueResolver.Resolve<EntityGID>(property));
             } else {
                 var gid = SerializedPropertyValueResolver.Resolve<EntityGIDCompact>(property);
                 EditorGUILayout.BeginHorizontal();
@@ -481,6 +485,32 @@ namespace FFS.Libraries.StaticEcs.Unity.Editor {
             }
 
             return true;
+        }
+
+        // A struct whose only field is an EntityGID (a typed handle such as a game's XEntity wrapper)
+        // is drawn as the link it holds. Unity can't serialize its readonly field, so PropertyField
+        // on it logs "seems to be referencing invalid or out of date data".
+        private static bool TryDrawEntityWrapperInline(SerializedProperty property) {
+            if (property.propertyType != SerializedPropertyType.Generic) return false;
+            var boxed = SerializedPropertyValueResolver.Resolve<object>(property);
+            if (boxed == null) return false;
+            var type = boxed.GetType();
+            if (!type.IsValueType || type == typeof(EntityGID) || type == typeof(EntityGIDCompact)) return false;
+            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (fields.Length != 1 || fields[0].FieldType != typeof(EntityGID)) return false;
+            DrawEntityGIDRow(ObjectNames.NicifyVariableName(property.name), (EntityGID) fields[0].GetValue(boxed));
+            return true;
+        }
+
+        private static void DrawEntityGIDRow(string label, EntityGID gid) {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel(label);
+            var (text, actual) = ResolveEntityGIDDisplay(gid);
+            EditorGUILayout.SelectableLabel(text, GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight));
+            if (actual) {
+                DrawInspectEntityButton(gid);
+            }
+            EditorGUILayout.EndHorizontal();
         }
 
         private static Type ResolveManagedReferenceType(string fullTypeName) {
