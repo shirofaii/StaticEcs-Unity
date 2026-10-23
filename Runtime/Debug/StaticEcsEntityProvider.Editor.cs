@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace FFS.Libraries.StaticEcs.Unity {
 
-    public abstract partial class StaticEcsEntityProvider {
+    public partial class StaticEcsEntityProvider {
         public virtual bool EntityIsActual() {
             return World.Status == WorldStatus.Initialized
                    && entityGid.Status() == GIDStatus.Active;
